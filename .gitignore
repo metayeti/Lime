@@ -1,0 +1,13 @@
+# vim temp files
+*~
+*.swp
+*.swo
+*.vim
+# Visual Studio cache directory
+.vs/
+# Visual Studio debug database
+*.pdb
+# ignored folders
+bin/
+obj/
+tmp/

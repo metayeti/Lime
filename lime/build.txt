@@ -11,7 +11,9 @@ To build the Lime utility:
 ## Windows:
 
   Navigate to \windows\vs16 and use Visual Studio 16 to open the solution file.
-  Select the configuration you want to use (for example Release / x64) and build.
+  Select the configuration you want to use (for example Release / x64) and build
+  the Lime project.
 
   Binary should appear in \lime\bin\[x86|x64]\[Debug|Release].
 
+Produced binary is a standalone executable that you can copy into your own projects.

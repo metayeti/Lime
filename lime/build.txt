@@ -1,0 +1,17 @@
+To build the Lime utility:
+
+## Linux:
+
+  Make sure you have zlib development libraries installed for your environment.
+
+  Navigate to /lime/ and type `make`.
+
+  Release binary should appear in /lime/bin/.
+
+## Windows:
+
+  Navigate to \windows\vs16 and use Visual Studio 16 to open the solution file.
+  Select the configuration you want to use (for example Release / x64) and build.
+
+  Binary should appear in \lime\bin\[x86|x64]\[Debug|Release].
+

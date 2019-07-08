@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 
 	if (argc == 2 && !strcmp(argv[1], "--help"))
 	{
-		printHeader(argv[0], inf);
+		printHeader(executableName, inf);
 		//printHeader(argv);
 		//printHelp(argv);
 	}
@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
 	{
 		printHeader(executableName, inf);
 		inf.setConsoleColor(Lime::Interface::Color::WHITE);
-		inf.print("\nUse ", argv[0]);
+		inf.print("\nUse ");
 		inf.setConsoleColor(Lime::Interface::Color::YELLOW);
 		inf.print("%s --help", executableName);
 		inf.setConsoleColor(Lime::Interface::Color::WHITE);

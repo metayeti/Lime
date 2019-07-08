@@ -135,7 +135,7 @@ bool pack(const char* resourceManifestFilename, const char* outputFilename)
 	return false;
 }
 
-void printHeader(const char* const executableName, Lime::Interface& inf)
+void printHeader(Lime::Interface& inf)
 {
 	inf.print("\n");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
@@ -147,41 +147,102 @@ void printHeader(const char* const executableName, Lime::Interface& inf)
 	inf.setConsoleColor(Lime::Interface::Color::GRAY);
 	inf.print("\n      Datafile packer\n");
 	inf.print("(c) %s %s\n\n", LIME_COPYRIGHT_YEARS, LIME_COPYRIGHT_AUTHOR);
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("Usage:\n");
-	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
-	inf.print("  %s [resource manifest file] [output file]\n", executableName);
+	inf.restoreConsoleColor();
 }
 
-void printHelp(char** argv)
+void printUsage(const char* const executableName, Lime::Interface& inf)
 {
-	/*
-	lm_printf("Use this utility to prepare and pack datafiles.\n\n");
-	lm_printf("To use this utility, you need to create a resource manifest first. The resource manifest\n");
-	lm_printf("is an INI-formatted file that contains references to files or values that will be stored\n");
-	lm_printf("in the datafile.\n\n");
-	lm_printf("A resource manifest file consists of categories, keys and values:\n\n");
-	lm_printf("  ; comment\n");
-	lm_printf("  [category]\n");
-	lm_printf("  key = value\n\n");
-	lm_printf("An example resource manifest entry can look like this:\n\n");
-	lm_printf("  [graphics]\n");
-	lm_printf("  sprite1 = graphics%ssprite1.png\n", PATH_SEPARATOR);
-	lm_printf("  sprite2 = graphics%ssprite2.png\n\n", PATH_SEPARATOR);
-	lm_printf("Lime interprets the value of every entry as a filename containing data to be packed.\n");
-	lm_printf("Note that filenames are not stored in the datafile, data is indexed based on key.\n\n");
-	lm_printf("You can add meta categories by prefixing category names with @. This will store values\n");
-	lm_printf("directly. Example use:\n\n");
-	lm_printf("  [@meta]\n");
-	lm_printf("  datafile version = 1.0.0\n");
-	lm_printf("  important info = Dinosaurs are awesome!\n\n");
-	lm_printf("When unpacking, you can use category and keys to reach data. Note that Lime datafiles do\n");
-	lm_printf("not contain any information about the types of files stored in it.\n\n");
-	lm_printf("When you're done creating the resource manifest, you can use the utility, for example:\n\n");
-	lm_printf("  %s resources.manifest datafile.dat\n\n", argv[0]);
-	lm_printf("If the manifest changes often and you need to compile the datafile many times over, it\n");
-	lm_printf("is recommended that you create a batch script to automate the process.\n");
-	*/
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("Usage:\n\n");
+	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.print("  %s [resource manifest file] [output file]\n", executableName);
+	inf.restoreConsoleColor();
+}
+
+void printHelp(const char* const executableName, Lime::Interface& inf)
+{
+#if defined(_WIN32)
+	static const char* const scriptEnv = "batch";
+#else
+	static const char* const scriptEnv = "bash";
+#endif
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("\nUse this utility to pack your Lime datafiles.\n\n");
+	inf.print("To use this utility, you will need to create a resource manifest file.\n");
+	inf.print("The resource manifest is an INI-formatted file that contains references\n");
+	inf.print("to your asset files. It contains entries that consist of categories,\n");
+	inf.print("keys and values:\n\n");
+	inf.setConsoleColor(Lime::Interface::Color::GRAY);
+	inf.print("  ; comments exist on a single line\n");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
+	inf.print("  [");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.print("category");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
+	inf.print("]\n");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
+	inf.print("  key ");
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("=");
+	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.print(" value\n\n");
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("An example resource manifest entry can look like this:\n\n");
+	inf.setConsoleColor(Lime::Interface::Color::GRAY);
+	inf.print("  ; graphics for my awesome game\n");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
+	inf.print("  [");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.print("graphics");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
+	inf.print("]\n");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
+	inf.print("  sprite1 ");
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("=");
+	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.print(" graphics% ssprite1.png\n", PATH_SEPARATOR);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
+	inf.print("  sprite2 ");
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("=");
+	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.print(" graphics% ssprite2.png\n\n", PATH_SEPARATOR);
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("Lime interprets the value of every entry as a file that contains data\n");
+	inf.print("to be packed. Note that filenames are lost in the process and data is\n");
+	inf.print("indexed by the provided category and key.\n\n");
+	inf.print("You can add meta-categories by prefixing category names with ");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTCYAN);
+	inf.print("@");
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print(". In\n");
+	inf.print("this case all values in this category will be stored directly:\n\n");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
+	inf.print("  [");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTCYAN);
+	inf.print("@");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.print("metainfo");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
+	inf.print("]\n");
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
+	inf.print("  important info ");
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("=");
+	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.print(" Dinosaurs are awesome!\n\n");
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("When unpacking. you can use category and keys to reach binary data.\n");
+	inf.print("Note that Lime datafiles do not contain any information about the\n");
+	inf.print("type of data stored inside - you will have to rely on some sort of\n");
+	inf.print("structure to make data types clear.\n\n");
+	inf.print("When you have the manifest file, you can use the utility like this:\n\n");
+	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.print("  %s resources.manifest datafile.dat\n\n", executableName);
+	inf.setConsoleColor(Lime::Interface::Color::WHITE);
+	inf.print("If the manifest file changes often, it is recommended to create a\n");
+	inf.print("%s script to simplify your development flow.\n", scriptEnv);
 }
 
 int main(int argc, char* argv[])
@@ -191,13 +252,14 @@ int main(int argc, char* argv[])
 
 	if (argc == 2 && !strcmp(argv[1], "--help"))
 	{
-		printHeader(executableName, inf);
-		//printHeader(argv);
-		//printHelp(argv);
+		printHeader(inf);
+		printUsage(executableName, inf);
+		printHelp(executableName, inf);
 	}
 	else if (argc != 3)
 	{
-		printHeader(executableName, inf);
+		printHeader(inf);
+		printUsage(executableName, inf);
 		inf.setConsoleColor(Lime::Interface::Color::WHITE);
 		inf.print("\nUse ");
 		inf.setConsoleColor(Lime::Interface::Color::YELLOW);

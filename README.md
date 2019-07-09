@@ -1,6 +1,6 @@
 # LimePack
 
-v0.2.0
+![Lime](/lime.png?raw=true)
 
 ## Info
 

@@ -176,7 +176,7 @@ void printHelp(const char* const executableName, Lime::Interface& inf)
 	inf.print("  ; comments exist on a single line\n");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
 	inf.print("  [");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
 	inf.print("category");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
 	inf.print("]\n");
@@ -184,7 +184,7 @@ void printHelp(const char* const executableName, Lime::Interface& inf)
 	inf.print("  key ");
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
 	inf.print(" value\n\n");
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("An example resource manifest entry can look like this:\n\n");
@@ -192,7 +192,7 @@ void printHelp(const char* const executableName, Lime::Interface& inf)
 	inf.print("  ; graphics for my awesome game\n");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
 	inf.print("  [");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
 	inf.print("graphics");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
 	inf.print("]\n");
@@ -200,17 +200,17 @@ void printHelp(const char* const executableName, Lime::Interface& inf)
 	inf.print("  sprite1 ");
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
 	inf.print(" graphics% ssprite1.png\n", PATH_SEPARATOR);
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
 	inf.print("  sprite2 ");
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
 	inf.print(" graphics% ssprite2.png\n\n", PATH_SEPARATOR);
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("Lime interprets the value of every entry as a file that contains data\n");
-	inf.print("to be packed. Note that filenames are lost in the process and data is\n");
+	inf.print("Lime interprets the entry values as files containing the data to be\n");
+	inf.print("packed. Note that filenames are lost in the process and data is\n");
 	inf.print("indexed by the provided category and key.\n\n");
 	inf.print("You can add meta-categories by prefixing category names with ");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTCYAN);
@@ -222,7 +222,7 @@ void printHelp(const char* const executableName, Lime::Interface& inf)
 	inf.print("  [");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTCYAN);
 	inf.print("@");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
 	inf.print("metainfo");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
 	inf.print("]\n");
@@ -230,7 +230,7 @@ void printHelp(const char* const executableName, Lime::Interface& inf)
 	inf.print("  important info ");
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
 	inf.print(" Dinosaurs are awesome!\n\n");
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("When unpacking. you can use category and keys to reach binary data.\n");

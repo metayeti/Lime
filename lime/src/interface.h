@@ -49,6 +49,8 @@ namespace Lime
 		int colorsToRestore = -1;
 
 		WORD GetConsoleTextAttribute();
+#else
+		bool enableColors = true;
 #endif
 
 	public:
@@ -93,6 +95,8 @@ namespace Lime
 			BRIGHTWHITE = 97
 		};
 #endif
+
+		Interface();
 
 		void setConsoleColor(Color color);
 		void restoreConsoleColor();

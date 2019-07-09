@@ -35,6 +35,8 @@
 #include <cstdarg>
 #if defined(_WIN32)
 	#include <Windows.h>
+#else
+	#include <unistd.h>
 #endif
 
 #if defined(_WIN32)
@@ -50,6 +52,17 @@ WORD Lime::Interface::GetConsoleTextAttribute()
 }
 #endif
 
+Lime::Interface::Interface()
+{
+#if !defined(_WIN32)
+	if (!isatty(fileno(stdout)))
+	{
+		// stdout is not a terminal, prevent colors so output isn't littered by escape codes
+		enableColors = false;
+	}
+#endif
+}
+
 void Lime::Interface::setConsoleColor(Color color)
 {
 	int colorCode = static_cast<int>(color);
@@ -64,7 +77,10 @@ void Lime::Interface::setConsoleColor(Color color)
 	}
 	SetConsoleTextAttribute(hConsole, colorCode);
 #else
-	print("\033[1;%dm", colorCode);
+	if (enableColors)
+	{
+		print("\033[1;%dm", colorCode);
+	}
 #endif
 }
 
@@ -78,7 +94,10 @@ void Lime::Interface::restoreConsoleColor()
 	SetConsoleTextAttribute(hConsole, colorsToRestore);
 	colorsToRestore = -1;
 #else
-	print("\033[1;0m");
+	if (enableColors)
+	{
+		print("\033[1;0m");
+	}
 #endif
 }
 

@@ -131,18 +131,17 @@ bool pack(const char* resourceManifestFilename, const char* outputFilename)
 	                              |__________|_________|______|
 
 	*/
-
 	return false;
 }
 
 void printHeader(Lime::Interface& inf)
 {
 	inf.print("\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
 	inf.print(" -----| Lime");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
 	inf.print(" %s", LIME_VERSION);
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTBLUE);
+	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
 	inf.print(" |-----");
 	inf.setConsoleColor(Lime::Interface::Color::GRAY);
 	inf.print("\n      Datafile packer\n");

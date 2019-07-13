@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
 {
 	const char* const execName = argv[0];
 	Lime::Interface inf;
-	Lime::Packer packer;
+	//Lime::Packer packer;
 
 	printHeader(inf);
 	printUsage(inf, execName);

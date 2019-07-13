@@ -61,7 +61,7 @@ namespace Lime
 			BLACK = 30, BLUE = 34, GREEN = 32, CYAN = 36,
 			RED = 31, PURPLE = 35, YELLOW = 33, WHITE = 37,
 			GRAY = 90, BRIGHTBLUE = 94, BRIGHTGREEN = 92, BRIGHTCYAN = 96,
-			BRIGHTRED = 91, BRIGHTPURPLE = 94, BRIGHTYELLOW = 93, BRIGHTWHITE = 97
+			BRIGHTRED = 91, BRIGHTPURPLE = 94, BRIGHTYELLOW = 93, BRIGHTWHITE = 97,
 			DEFAULT = 9999
 		};
 #endif
@@ -87,7 +87,7 @@ namespace Lime
 			return *this;
 		}
 
-		template<>
+		//template<>
 		Interface& operator<<(Color color)
 		{
 			setOutputColor(color);

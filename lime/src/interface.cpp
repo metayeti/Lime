@@ -1,13 +1,3 @@
-/*
- *  Lime
- *
- *  Utility for Lime datafile creation.
- *
- *  interface.cpp
- *  Implements the class for console output.
- *
- */
-
  /*
   * Copyright (c) 2019 Danijel Durakovic
   *
@@ -30,85 +20,86 @@
   *
   */
 
+  /*
+   *  Lime
+   *
+   *  Utility for Lime datafile creation.
+   *
+   *  interface.cpp
+   *  Implements the class for console output.
+   *
+   */
+
 #include "interface.h"
-#include <cstdio>
-#include <cstdarg>
 #if defined(_WIN32)
 	#include <Windows.h>
 #else
 	#include <unistd.h>
 #endif
 
+namespace Lime
+{
 #if defined(_WIN32)
-WORD Lime::Interface::GetConsoleTextAttribute()
-{
-	if (!hConsole)
+	WORD Interface::GetConsoleTextAttribute()
 	{
-		return 0;
-	}
-	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
-	GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
-	return consoleInfo.wAttributes;
-}
-#endif
-
-Lime::Interface::Interface()
-{
-#if !defined(_WIN32)
-	if (!isatty(fileno(stdout)))
-	{
-		// stdout is not a terminal, prevent colors so output isn't littered by escape codes
-		enableColors = false;
+		if (!hConsole)
+		{
+			return 0;
+		}
+		CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+		GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
+		return consoleInfo.wAttributes;
 	}
 #endif
-}
 
-void Lime::Interface::setConsoleColor(Color color)
-{
-	int colorCode = static_cast<int>(color);
-#if defined(_WIN32)
-	if (!hConsole)
+	void Interface::setOutputColor(Interface::Color color)
 	{
+		bool restoreColor = color == Color::DEFAULT;
+
+		if (!restoreColor)
+		{
+			int colorCode = static_cast<int>(color);
+#if defined(_WIN32)
+			if (colorsToRestore < 0)
+			{
+				colorsToRestore = GetConsoleTextAttribute();
+			}
+			SetConsoleTextAttribute(hConsole, colorCode);
+#else
+			if (enableColors)
+			{
+				std::cout << "\033[1;" << colorCode << "m";
+			}
+#endif
+		}
+		else
+		{
+#if defined(_WIN32)
+			if (colorsToRestore >= 0 && hConsole)
+			{
+				SetConsoleTextAttribute(hConsole, colorsToRestore);
+				colorsToRestore = -1;
+			}
+#else
+			if (enableColors)
+			{
+				std::cout << "\033[1;0m";
+			}
+#endif
+		}
+	}
+
+	Interface::Interface()
+	{
+#if defined(_WIN32)
 		hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	}
-	if (colorsToRestore < 0)
-	{
-		colorsToRestore = GetConsoleTextAttribute();
-	}
-	SetConsoleTextAttribute(hConsole, colorCode);
 #else
-	if (enableColors)
-	{
-		print("\033[1;%dm", colorCode);
-	}
+		if (!isatty(fileno(stdout)))
+		{
+			// when stdout is not a terminal, prevent colors so output isn't littered by escape codes
+			enableColors = false;
+		}
 #endif
-}
+	}
 
-void Lime::Interface::restoreConsoleColor()
-{
-#if defined(_WIN32)
-	if (colorsToRestore < 0 || !hConsole)
-	{
-		return;
-	}
-	SetConsoleTextAttribute(hConsole, colorsToRestore);
-	colorsToRestore = -1;
-#else
-	if (enableColors)
-	{
-		print("\033[1;0m");
-	}
-#endif
-}
-
-void Lime::Interface::print(const char* format, ...)
-{
-	va_list argptr;
-	va_start(argptr, format);
-#if defined(_WIN32)
-	vfprintf_s(stdout, format, argptr);
-#else
-	vfprintf(stdout, format, argptr);
-#endif
-	va_end(argptr);
 }

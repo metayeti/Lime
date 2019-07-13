@@ -1,14 +1,4 @@
 /*
- *  Lime
- *
- *  Utility for Lime datafile creation.
- *
- *  lime.cpp
- *  Program entry point. 
- *
- */
-
-/*
  * Copyright (c) 2019 Danijel Durakovic
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -30,23 +20,34 @@
  *
  */
 
-#include <vector>
-#include <algorithm>
+ /*
+  *  Lime
+  *
+  *  Utility for Lime datafile creation.
+  *
+  *  lime.cpp
+  *  Program entry point.
+  *
+  */
+
+//#include <vector>
+//#include <algorithm>
 /*
 #include <cstdio>
 */
-#include <cstdint>
-#include <cstring>
-#include <sys/stat.h>
-#include <zlib.h>
+//#include <fstream>
+//#include <cstdint>
+//#include <cstring>
+//#include <sys/stat.h>
+//#include <zlib.h>
 #include "interface.h"
+#include "packer.h"
 
 const char* const LIME_VERSION = "0.2.0";
-const char* const LIME_COPYRIGHT_YEARS = "2019";
+const char* const LIME_COPYRIGHT_YEAR = "2019";
 const char* const LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
 
-const size_t LIME_HEAD_SIZE = 2;
-const char* const LIME_HEAD = "LM";
+//const char LIME_HEAD[] = "LM)";
 
 // define our own printf to avoid compilation warnings on Windows
 /*
@@ -57,6 +58,7 @@ const char* const LIME_HEAD = "LM";
 #endif
 */
 
+/*
 #if defined(_WIN32)
 	const char* const PATH_SEPARATOR = "\\";
 #else
@@ -93,9 +95,10 @@ inline void appendBytes(ByteData& a, ByteData& b)
 {
 	a.insert(a.end(), b.begin(), b.end());
 }
+*/
 
-bool pack(const char* resourceManifestFilename, const char* outputFilename)
-{
+//bool pack(const char* resourceManifestFilename, const char* outputFilename)
+//{
 	/*
 	
 	Datafile structure:
@@ -131,11 +134,25 @@ bool pack(const char* resourceManifestFilename, const char* outputFilename)
 	                              |__________|_________|______|
 
 	*/
-	return false;
-}
 
-void printHeader(Lime::Interface& inf)
-{
+/*
+	std::ofstream fout("test.dat", std::ofstream::out | std::ofstream::binary);
+
+	// write head to file
+	fout.write(LIME_HEAD, sizeof(LIME_HEAD) - 1);
+
+	std::string test = "teststring";
+
+
+	fout.close();
+
+	return false;
+	*/
+//}
+
+//void printHeader(Lime::Interface& inf)
+//{
+	/*
 	inf.print("\n");
 	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
 	inf.print(" -----| Lime");
@@ -147,19 +164,23 @@ void printHeader(Lime::Interface& inf)
 	inf.print("\n      Datafile packer\n");
 	inf.print("(c) %s %s\n\n", LIME_COPYRIGHT_YEARS, LIME_COPYRIGHT_AUTHOR);
 	inf.restoreConsoleColor();
-}
+	*/
+//}
 
-void printUsage(const char* const executableName, Lime::Interface& inf)
-{
+//void printUsage(const char* const executableName, Lime::Interface& inf)
+//{
+	/*
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("Usage:\n\n");
 	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
 	inf.print("  %s [resource manifest file] [output file]\n", executableName);
 	inf.restoreConsoleColor();
-}
+	*/
+//}
 
-void printHelp(const char* const executableName, Lime::Interface& inf)
-{
+//void printHelp(const char* const executableName, Lime::Interface& inf)
+//{
+	/*
 #if defined(_WIN32)
 	static const char* const scriptEnv = "batch";
 #else
@@ -242,21 +263,90 @@ void printHelp(const char* const executableName, Lime::Interface& inf)
 	inf.setConsoleColor(Lime::Interface::Color::WHITE);
 	inf.print("If the manifest file changes often, it is recommended to create a\n");
 	inf.print("%s script to simplify your development flow.\n", scriptEnv);
+	*/
+//}
+
+void printHeader(Lime::Interface& inf)
+{
+	/*
+inf.print("\n");
+inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
+inf.print(" -----| Lime");
+inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
+inf.print(" %s", LIME_VERSION);
+inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
+inf.print(" |-----");
+inf.setConsoleColor(Lime::Interface::Color::GRAY);
+inf.print("\n      Datafile packer\n");
+inf.print("(c) %s %s\n\n", LIME_COPYRIGHT_YEARS, LIME_COPYRIGHT_AUTHOR);
+inf.restoreConsoleColor();
+*/
+
+	inf
+		<< "\n"
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< " -----| Lime "
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< LIME_VERSION
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< " |-----\n"
+		<< Lime::Interface::Color::GRAY
+		<< "   Game datafile packer\n"
+		<< "(c) " << LIME_COPYRIGHT_YEAR << " " << LIME_COPYRIGHT_AUTHOR
+		<< "\n\n";
+}
+
+void printUsage(Lime::Interface& inf, const char* const execName)
+{
+	/*
+inf.setConsoleColor(Lime::Interface::Color::WHITE);
+inf.print("Usage:\n\n");
+inf.setConsoleColor(Lime::Interface::Color::YELLOW);
+inf.print("  %s [resource manifest file] [output file]\n", executableName);
+inf.restoreConsoleColor();
+*/
+	inf
+		<< Lime::Interface::Color::WHITE
+		<< "Usage:\n\n"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "  " << execName << " ["
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< "resource manifest file"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "] ["
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< "output file"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "]\n\n";
 }
 
 int main(int argc, char* argv[])
 {
-	const char* const executableName = argv[0];
+	const char* const execName = argv[0];
 	Lime::Interface inf;
+	Lime::Packer packer;
 
-	if (argc == 2 && !strcmp(argv[1], "--help"))
-	{
+	printHeader(inf);
+	printUsage(inf, execName);
+	inf
+		<< Lime::Interface::Color::WHITE
+		<< "Use "
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< execName << " --help"
+		<< Lime::Interface::Color::WHITE
+		<< " for more information.\n";
+
+	//if (argc == 2 && !strcmp(argv[1], "--help"))
+	//{
+		/*
 		printHeader(inf);
 		printUsage(executableName, inf);
 		printHelp(executableName, inf);
-	}
-	else if (argc != 3)
-	{
+		*/
+	//}
+	//else if (argc != 3)
+	//{
+		/*
 		printHeader(inf);
 		printUsage(executableName, inf);
 		inf.setConsoleColor(Lime::Interface::Color::WHITE);
@@ -265,17 +355,18 @@ int main(int argc, char* argv[])
 		inf.print("%s --help", executableName);
 		inf.setConsoleColor(Lime::Interface::Color::WHITE);
 		inf.print(" for more information.\n");
-	}
-	else
-	{
-		pack(argv[1], argv[2]);
-	}
+		*/
+	//}
+	//else
+	//{
+		///pack(argv[1], argv[2]);
+	//}
 
 #if !defined(_WIN32)
-	inf.print("\n");
+	inf << "\n";
 #endif
 
-	inf.restoreConsoleColor();
+	inf << Lime::Interface::Color::DEFAULT;
 
 	return 0;
 }

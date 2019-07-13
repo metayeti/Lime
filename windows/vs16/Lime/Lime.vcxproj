@@ -21,10 +21,12 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\lime\src\interface.cpp" />
     <ClCompile Include="..\..\..\lime\src\lime.cpp" />
+    <ClCompile Include="..\..\..\lime\src\packer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\lime\src\archive.h" />
     <ClInclude Include="..\..\..\lime\src\interface.h" />
+    <ClInclude Include="..\..\..\lime\src\packer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

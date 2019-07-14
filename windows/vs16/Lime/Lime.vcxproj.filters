@@ -21,7 +21,13 @@
     <ClCompile Include="..\..\..\lime\src\interface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\lime\src\packer.cpp">
+    <ClCompile Include="..\..\..\lime\src\pack.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lime\src\iniparse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lime\src\dict.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,7 +38,13 @@
     <ClInclude Include="..\..\..\lime\src\interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\lime\src\packer.h">
+    <ClInclude Include="..\..\..\lime\src\pack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lime\src\iniparse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lime\src\dict.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

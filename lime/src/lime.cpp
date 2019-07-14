@@ -37,11 +37,15 @@
 */
 //#include <fstream>
 //#include <cstdint>
-//#include <cstring>
 //#include <sys/stat.h>
 //#include <zlib.h>
 #include "interface.h"
-#include "packer.h"
+#include "pack.h"
+#include "dict.h"
+//#include <cstring>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 const char* const LIME_VERSION = "0.2.0";
 const char* const LIME_COPYRIGHT_YEAR = "2019";
@@ -296,7 +300,7 @@ inf.restoreConsoleColor();
 		<< "\n\n";
 }
 
-void printUsage(Lime::Interface& inf, const char* const execName)
+void printUsage(Lime::Interface& inf, std::string const& execName)
 {
 	/*
 inf.setConsoleColor(Lime::Interface::Color::WHITE);
@@ -320,14 +324,95 @@ inf.restoreConsoleColor();
 		<< "]\n\n";
 }
 
+void printHelp(Lime::Interface& inf, std::string const& execName)
+{
+
+}
+
+std::string stripFilenamePathExt(const char* const fullPathFilename)
+{
+	// strips a filename path and extension and makes the output lowercase
+	std::string filename(fullPathFilename);
+	const std::size_t lastSlashPos = filename.find_last_of("\\/");
+	if (lastSlashPos != std::string::npos)
+	{
+		filename.erase(0, lastSlashPos + 1);
+	}
+	const std::size_t periodPos = filename.rfind('.');
+	if (periodPos != std::string::npos)
+	{
+		filename.erase(periodPos);
+	}
+	std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
+	return filename;
+}
+
 int main(int argc, char* argv[])
 {
-	const char* const execName = argv[0];
+	std::vector<std::string> args;
+	if (argc > 1)
+	{
+		args.assign(argv + 1, argv + argc);
+	}
+
+	std::size_t n_args = args.size();
+	const std::string execName = stripFilenamePathExt(argv[0]);
+
 	Lime::Interface inf;
-	//Lime::Packer packer;
 
 	printHeader(inf);
-	printUsage(inf, execName);
+
+	for (auto& x : args)
+	{
+		inf << x << "\n";
+	}
+
+	if (n_args == 1)
+	{
+		if (args[0] == "--help")
+		{
+			printHelp(inf, execName);
+		}
+		else
+		{
+			inf.error("Unknown argument.\n");
+		}
+	}
+	else if (n_args > 1)
+	{
+	}
+
+	
+	/*
+	if (argc >= 2)
+	{
+		if (!strcmp(argv[1], "--help"))
+		{
+			printHelp(inf, execName);
+		}
+		else if (argc < 3)
+		{
+			inf
+				.error("Unknown command \"")
+				<< argv[1]
+				<< "\".\n";
+		}
+	}
+	else
+	{
+		printUsage(inf, execName);
+		inf
+			<< Lime::Interface::Color::WHITE
+			<< "Use "
+			<< Lime::Interface::Color::BRIGHTWHITE
+			<< execName << " --help"
+			<< Lime::Interface::Color::WHITE
+			<< " for more information.\n";
+	}
+	*/
+
+	//printUsage(inf, execName);
+	/*
 	inf
 		<< Lime::Interface::Color::WHITE
 		<< "Use "
@@ -335,6 +420,7 @@ int main(int argc, char* argv[])
 		<< execName << " --help"
 		<< Lime::Interface::Color::WHITE
 		<< " for more information.\n";
+		*/
 
 	//if (argc == 2 && !strcmp(argv[1], "--help"))
 	//{

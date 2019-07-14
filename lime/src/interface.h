@@ -87,11 +87,20 @@ namespace Lime
 			return *this;
 		}
 
-		//template<>
 		Interface& operator<<(Color color)
 		{
 			setOutputColor(color);
 			return *this;
+		}
+
+		template<typename T>
+		Interface& error(T message)
+		{
+			return *this
+				<< Color::BRIGHTRED
+				<< "Error: "
+				<< Color::DEFAULT
+				<< message;
 		}
 	};
 

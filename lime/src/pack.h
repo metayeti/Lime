@@ -32,12 +32,14 @@
 
 #pragma once
 
-#ifndef LIME_PACKER_H_
-#define LIME_PACKER_H_
+#ifndef LIME_PACK_H_
+#define LIME_PACK_H_
+
+#include "dict.h"
 
 namespace Lime
 {
-	
+	void pack(Dict& resourceDict, const char* const outputFilename);
 }
 
-#endif // LIME_PACKER_H_
+#endif // LIME_PACK_H_

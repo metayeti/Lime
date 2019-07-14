@@ -19,14 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\lime\src\dict.cpp" />
+    <ClCompile Include="..\..\..\lime\src\iniparse.cpp" />
     <ClCompile Include="..\..\..\lime\src\interface.cpp" />
     <ClCompile Include="..\..\..\lime\src\lime.cpp" />
-    <ClCompile Include="..\..\..\lime\src\packer.cpp" />
+    <ClCompile Include="..\..\..\lime\src\pack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\lime\src\archive.h" />
+    <ClInclude Include="..\..\..\lime\src\dict.h" />
+    <ClInclude Include="..\..\..\lime\src\iniparse.h" />
     <ClInclude Include="..\..\..\lime\src\interface.h" />
-    <ClInclude Include="..\..\..\lime\src\packer.h" />
+    <ClInclude Include="..\..\..\lime\src\pack.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

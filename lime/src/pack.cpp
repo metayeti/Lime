@@ -30,10 +30,61 @@
   *
   */
 
-#include "packer.h"
+#include "pack.h"
+#include "dict.h"
 
 namespace Lime
 {
-}
+	void pack(Dict& dict, const char* const outputFilename)
+	{
+		/*
 
-#include "packer.h"
+		Datafile structure:
+
+
+		         Z0           Z1    ...   Zn
+		        [~~~~~~~~~~] [~~~] [~~~] [~~~]        (zipped content)
+
+		  head   dictionary   user resources   checksum
+		|______|____________|________________|__________|
+		             |
+		             |
+		             |
+		             |
+		         dictionary:
+
+		         N   section 1   ...   section N
+		       |___|___________|     |___________|
+		                 |
+		                 |
+		                 |
+		                 |
+		              section:
+
+		              section key   N   data 1   ...   data N
+		            |_____________|___|________|     |________|
+		                                  |
+		                                  |
+		                                  |
+		                                data:
+
+		                                data key   seek_id   size
+		                              |__________|_________|______|
+
+		*/
+
+		/*
+		for (auto const& it : dict)
+		{
+			auto const& categoryName = it.first;
+			auto const& collection = it.second;
+			for (auto const& it2 : collection)
+			{
+				auto const& key = it2.first;
+				auto const& value = it2.second;
+			}
+		}
+		*/
+
+	}
+}

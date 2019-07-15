@@ -30,8 +30,8 @@
   *
   */
 
-#include "iniparse.h"
 #include <algorithm>
+#include "iniparse.h"
 
 namespace Lime
 {

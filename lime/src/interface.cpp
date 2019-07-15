@@ -30,12 +30,12 @@
    *
    */
 
-#include "interface.h"
 #if defined(_WIN32)
 	#include <Windows.h>
 #else
 	#include <unistd.h>
 #endif
+#include "interface.h"
 
 namespace Lime
 {

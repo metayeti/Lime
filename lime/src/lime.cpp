@@ -30,262 +30,25 @@
   *
   */
 
-//#include <vector>
-//#include <algorithm>
-/*
-#include <cstdio>
-*/
-//#include <fstream>
-//#include <cstdint>
-//#include <sys/stat.h>
-//#include <zlib.h>
-#include "interface.h"
-#include "pack.h"
-#include "dict.h"
-//#include <cstring>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include "interface.h"
+#include "dict.h"
+#include "pack.h"
 
 const char* const LIME_VERSION = "0.2.0";
 const char* const LIME_COPYRIGHT_YEAR = "2019";
 const char* const LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
 
-//const char LIME_HEAD[] = "LM)";
-
-// define our own printf to avoid compilation warnings on Windows
-/*
 #if defined(_WIN32)
-	#define lm_printf(...) printf_s(__VA_ARGS__)	
+const char* const PATH_SEPARATOR = "\\";
 #else
-	#define lm_printf(...) printf(__VA_ARGS__)
-#endif
-*/
-
-/*
-#if defined(_WIN32)
-	const char* const PATH_SEPARATOR = "\\";
-#else
-	const char* const PATH_SEPARATOR = "/";
+const char* const PATH_SEPARATOR = "/";
 #endif
 
-using ByteData = std::vector<Bytef>;
-
-bool fileExists(const char* filename)
+void printHeader(Lime::Interface& inf, std::string const& execName)
 {
-	struct stat buff;
-	return !stat(filename, &buff);
-}
-
-unsigned int fileSize(const char* filename)
-{
-	struct stat buff;
-	stat(filename, &buff);
-	return buff.st_size;
-}
-
-template<typename T>
-ByteData toBytes(T const& value)
-{
-	ByteData bytes;
-	for (size_t i = sizeof(T); i --> 0; )
-	{
-		bytes.push_back(static_cast<Bytef>(value >> (i * 8)));
-	}
-	return bytes;
-}
-
-inline void appendBytes(ByteData& a, ByteData& b)
-{
-	a.insert(a.end(), b.begin(), b.end());
-}
-*/
-
-//bool pack(const char* resourceManifestFilename, const char* outputFilename)
-//{
-	/*
-	
-	Datafile structure:
-
-
-	         Z0           Z1    ...   Zn
-	        [~~~~~~~~~~] [~~~] [~~~] [~~~]        (zipped content)
-
-	  head   dictionary   user resources   checksum
-	|______|____________|________________|__________|
-	             |
-	             |
-	             |
-	             |
-	         dictionary:
-
-	         N   section 1   ...   section N
-	       |___|___________|     |___________|
-	                 |
-	                 |
-	                 |
-	                 |
-	              section:
-
-	              section key   N   data 1   ...   data N
-	            |_____________|___|________|     |________|
-	                                  |
-	                                  |
-	                                  |
-	                                data:
-
-	                                data key   seek_id   size
-	                              |__________|_________|______|
-
-	*/
-
-/*
-	std::ofstream fout("test.dat", std::ofstream::out | std::ofstream::binary);
-
-	// write head to file
-	fout.write(LIME_HEAD, sizeof(LIME_HEAD) - 1);
-
-	std::string test = "teststring";
-
-
-	fout.close();
-
-	return false;
-	*/
-//}
-
-//void printHeader(Lime::Interface& inf)
-//{
-	/*
-	inf.print("\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-	inf.print(" -----| Lime");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-	inf.print(" %s", LIME_VERSION);
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-	inf.print(" |-----");
-	inf.setConsoleColor(Lime::Interface::Color::GRAY);
-	inf.print("\n      Datafile packer\n");
-	inf.print("(c) %s %s\n\n", LIME_COPYRIGHT_YEARS, LIME_COPYRIGHT_AUTHOR);
-	inf.restoreConsoleColor();
-	*/
-//}
-
-//void printUsage(const char* const executableName, Lime::Interface& inf)
-//{
-	/*
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("Usage:\n\n");
-	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
-	inf.print("  %s [resource manifest file] [output file]\n", executableName);
-	inf.restoreConsoleColor();
-	*/
-//}
-
-//void printHelp(const char* const executableName, Lime::Interface& inf)
-//{
-	/*
-#if defined(_WIN32)
-	static const char* const scriptEnv = "batch";
-#else
-	static const char* const scriptEnv = "bash";
-#endif
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("\nUse this utility to pack your Lime datafiles.\n\n");
-	inf.print("To use this utility, you will need to create a resource manifest file.\n");
-	inf.print("The resource manifest is an INI-formatted file that contains references\n");
-	inf.print("to your asset files. It contains entries that consist of categories,\n");
-	inf.print("keys and values:\n\n");
-	inf.setConsoleColor(Lime::Interface::Color::GRAY);
-	inf.print("  ; comments exist on a single line\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-	inf.print("  [");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
-	inf.print("category");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-	inf.print("]\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-	inf.print("  key ");
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
-	inf.print(" value\n\n");
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("An example resource manifest entry can look like this:\n\n");
-	inf.setConsoleColor(Lime::Interface::Color::GRAY);
-	inf.print("  ; graphics for my awesome game\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-	inf.print("  [");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
-	inf.print("graphics");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-	inf.print("]\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-	inf.print("  sprite1 ");
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
-	inf.print(" graphics% ssprite1.png\n", PATH_SEPARATOR);
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-	inf.print("  sprite2 ");
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
-	inf.print(" graphics% ssprite2.png\n\n", PATH_SEPARATOR);
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("Lime interprets the entry values as files containing the data to be\n");
-	inf.print("packed. Note that filenames are lost in the process and data is\n");
-	inf.print("indexed by the provided category and key.\n\n");
-	inf.print("You can add meta-categories by prefixing category names with ");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTCYAN);
-	inf.print("@");
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print(". In\n");
-	inf.print("this case all values in this category will be stored directly:\n\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-	inf.print("  [");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTCYAN);
-	inf.print("@");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
-	inf.print("metainfo");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-	inf.print("]\n");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-	inf.print("  important info ");
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("=");
-	inf.setConsoleColor(Lime::Interface::Color::BRIGHTWHITE);
-	inf.print(" Dinosaurs are awesome!\n\n");
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("When unpacking. you can use category and keys to reach binary data.\n");
-	inf.print("Note that Lime datafiles do not contain any information about the\n");
-	inf.print("type of data stored inside - you will have to rely on some sort of\n");
-	inf.print("structure to make data types clear.\n\n");
-	inf.print("When you have the manifest file, you can use the utility like this:\n\n");
-	inf.setConsoleColor(Lime::Interface::Color::YELLOW);
-	inf.print("  %s resources.manifest datafile.dat\n\n", executableName);
-	inf.setConsoleColor(Lime::Interface::Color::WHITE);
-	inf.print("If the manifest file changes often, it is recommended to create a\n");
-	inf.print("%s script to simplify your development flow.\n", scriptEnv);
-	*/
-//}
-
-void printHeader(Lime::Interface& inf)
-{
-	/*
-inf.print("\n");
-inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-inf.print(" -----| Lime");
-inf.setConsoleColor(Lime::Interface::Color::BRIGHTRED);
-inf.print(" %s", LIME_VERSION);
-inf.setConsoleColor(Lime::Interface::Color::BRIGHTGREEN);
-inf.print(" |-----");
-inf.setConsoleColor(Lime::Interface::Color::GRAY);
-inf.print("\n      Datafile packer\n");
-inf.print("(c) %s %s\n\n", LIME_COPYRIGHT_YEARS, LIME_COPYRIGHT_AUTHOR);
-inf.restoreConsoleColor();
-*/
-
 	inf
 		<< "\n"
 		<< Lime::Interface::Color::BRIGHTGREEN
@@ -297,20 +60,8 @@ inf.restoreConsoleColor();
 		<< Lime::Interface::Color::GRAY
 		<< "   Game datafile packer\n"
 		<< "(c) " << LIME_COPYRIGHT_YEAR << " " << LIME_COPYRIGHT_AUTHOR
-		<< "\n\n";
-}
-
-void printUsage(Lime::Interface& inf, std::string const& execName)
-{
-	/*
-inf.setConsoleColor(Lime::Interface::Color::WHITE);
-inf.print("Usage:\n\n");
-inf.setConsoleColor(Lime::Interface::Color::YELLOW);
-inf.print("  %s [resource manifest file] [output file]\n", executableName);
-inf.restoreConsoleColor();
-*/
-	inf
-		<< Lime::Interface::Color::WHITE
+		<< "\n\n"
+		<< Lime::Interface::Color::DEFAULT
 		<< "Usage:\n\n"
 		<< Lime::Interface::Color::BRIGHTWHITE
 		<< "  " << execName << " ["
@@ -326,7 +77,104 @@ inf.restoreConsoleColor();
 
 void printHelp(Lime::Interface& inf, std::string const& execName)
 {
-
+	inf
+		<< Lime::Interface::Color::DEFAULT
+		<< "Use this utility to pack your Lime datafiles.\n\n"
+		<< "To pack a datafile, you will first need to create a resource manifest.\n"
+		<< "The resource manifest is an INI-formatted file with the following syntax:\n\n"
+		<< Lime::Interface::Color::GRAY
+		<< "  ; comment\n"
+		<< Lime::Interface::Color::BRIGHTRED
+		<< "  ["
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "category"
+		<< Lime::Interface::Color::BRIGHTRED
+		<< "]\n"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "  key "
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< "="
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< " value\n\n"
+		<< Lime::Interface::Color::DEFAULT
+		<< "An example resource manifest entry can look like this:\n\n"
+		<< Lime::Interface::Color::GRAY
+		<< "  ; graphics for my awesome game\n"
+		<< Lime::Interface::Color::BRIGHTRED
+		<< "  ["
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "graphics"
+		<< Lime::Interface::Color::BRIGHTRED
+		<< "]\n"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "  sprite1 "
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< "="
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< " graphics" << PATH_SEPARATOR << "sprite1.png\n"
+		<< "  sprite2 "
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< "="
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< " graphics" << PATH_SEPARATOR << "sprite2.png\n\n"
+		<< Lime::Interface::Color::DEFAULT
+		<< "Lime interprets every value as a file containing data to be packed. Note\n"
+		<< "that filenames are lost in the process. You will be able to access data\n"
+		<< "based on the category and key provided.\n\n"
+		<< "Note also that a Lime datafile does not contain any information about the\n"
+		<< "type of data stored in it.\n\n"
+		<< "It is recommended that you create a structure where categories reflect\n"
+		<< "the type of data contained in them - so for example everything in the\n"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "graphics"
+		<< Lime::Interface::Color::DEFAULT
+		<< " category will be an image of some kind. If you need further\n"
+		<< "type information, you can use a category name like "
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "graphics:png"
+		<< Lime::Interface::Color::DEFAULT
+		<< " to\n"
+		<< "be even more specific or use a naming scheme that makes sense to you.\n\n"
+		<< "You can also add meta-categories to the resource manifest by prefixing\n"
+		<< "the category name with "
+		<< Lime::Interface::Color::BRIGHTCYAN
+		<< "@"
+		<< Lime::Interface::Color::DEFAULT
+		<< ". In this case, all values in the category will\n"
+		<< "be stored directly:\n\n"
+		<< Lime::Interface::Color::BRIGHTRED
+		<< "  ["
+		<< Lime::Interface::Color::BRIGHTCYAN
+		<< "@"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "category"
+		<< Lime::Interface::Color::BRIGHTRED
+		<< "]\n"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "  important info "
+		<< Lime::Interface::Color::BRIGHTGREEN
+		<< "="
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< " Dinosaurs are awesome!\n\n"
+		<< Lime::Interface::Color::DEFAULT
+		<< "When you have the resource manifest file ready, you can use the utility:\n\n"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "  " << execName << " resources.manifest datafile.dat\n\n"
+		<< Lime::Interface::Color::DEFAULT
+		<< "This will generate a "
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "datafile.dat"
+		<< Lime::Interface::Color::DEFAULT
+		<< " based on resources listed in the\n"
+		<< Lime::Interface::Color::BRIGHTWHITE
+		<< "resources.manifest"
+		<< Lime::Interface::Color::DEFAULT
+		<< " file. If the resource manifest changes often, it is\n"
+		<< "recommended to create a batch script to simplify your development flow.	\n\n"
+		<< "Typically, such a script would call this utility and then copy the\n"
+		<< "datafile to where it is needed. When an error level 1 is raised, the\n"
+		<< "utility was unable to produce a datafile and an error message will be\n"
+		<< "displayed.\n";
 }
 
 std::string stripFilenamePathExt(const char* const fullPathFilename)
@@ -360,99 +208,39 @@ int main(int argc, char* argv[])
 
 	Lime::Interface inf;
 
-	printHeader(inf);
+	printHeader(inf, execName);
 
-	for (auto& x : args)
+	if (n_args >= 1 && (args[0] == "--help" || args[0] == "-h"))
 	{
-		inf << x << "\n";
-	}
-
-	if (n_args == 1)
-	{
-		if (args[0] == "--help")
+		if (n_args == 1)
 		{
 			printHelp(inf, execName);
 		}
 		else
 		{
-			inf.error("Unknown argument.\n");
 		}
 	}
-	else if (n_args > 1)
+	else if (n_args == 2)
 	{
-	}
-
-	
-	/*
-	if (argc >= 2)
-	{
-		if (!strcmp(argv[1], "--help"))
-		{
-			printHelp(inf, execName);
-		}
-		else if (argc < 3)
-		{
-			inf
-				.error("Unknown command \"")
-				<< argv[1]
-				<< "\".\n";
-		}
+		std::string const& resourceManifestFilename = args[0];
+		std::string const& outputFilename = args[1];
 	}
 	else
 	{
-		printUsage(inf, execName);
 		inf
-			<< Lime::Interface::Color::WHITE
+			<< Lime::Interface::Color::DEFAULT
 			<< "Use "
 			<< Lime::Interface::Color::BRIGHTWHITE
 			<< execName << " --help"
-			<< Lime::Interface::Color::WHITE
+			<< Lime::Interface::Color::DEFAULT
 			<< " for more information.\n";
 	}
-	*/
 
-	//printUsage(inf, execName);
-	/*
-	inf
-		<< Lime::Interface::Color::WHITE
-		<< "Use "
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< execName << " --help"
-		<< Lime::Interface::Color::WHITE
-		<< " for more information.\n";
-		*/
-
-	//if (argc == 2 && !strcmp(argv[1], "--help"))
-	//{
-		/*
-		printHeader(inf);
-		printUsage(executableName, inf);
-		printHelp(executableName, inf);
-		*/
-	//}
-	//else if (argc != 3)
-	//{
-		/*
-		printHeader(inf);
-		printUsage(executableName, inf);
-		inf.setConsoleColor(Lime::Interface::Color::WHITE);
-		inf.print("\nUse ");
-		inf.setConsoleColor(Lime::Interface::Color::YELLOW);
-		inf.print("%s --help", executableName);
-		inf.setConsoleColor(Lime::Interface::Color::WHITE);
-		inf.print(" for more information.\n");
-		*/
-	//}
-	//else
-	//{
-		///pack(argv[1], argv[2]);
-	//}
+	inf << Lime::Interface::Color::DEFAULT;
 
 #if !defined(_WIN32)
 	inf << "\n";
 #endif
-
-	inf << Lime::Interface::Color::DEFAULT;
 
 	return 0;
 }

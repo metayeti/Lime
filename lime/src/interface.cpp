@@ -40,7 +40,7 @@
 namespace Lime
 {
 #if defined(_WIN32)
-	WORD Interface::GetConsoleTextAttribute()
+	WORD Interface::GetConsoleTextAttribute() const
 	{
 		if (!hConsole)
 		{

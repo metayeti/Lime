@@ -71,7 +71,7 @@ namespace Lime
 		HANDLE hConsole = nullptr;
 		int colorsToRestore = -1;
 
-		WORD GetConsoleTextAttribute();
+		WORD GetConsoleTextAttribute() const;
 #else
 		bool enableColors = true;
 #endif

@@ -181,12 +181,12 @@ std::string stripFilenamePathExt(const char* const fullPathFilename)
 {
 	// strips a filename path and extension and makes the output lowercase
 	std::string filename(fullPathFilename);
-	const std::size_t lastSlashPos = filename.find_last_of("\\/");
+	const size_t lastSlashPos = filename.find_last_of("\\/");
 	if (lastSlashPos != std::string::npos)
 	{
 		filename.erase(0, lastSlashPos + 1);
 	}
-	const std::size_t periodPos = filename.rfind('.');
+	const size_t periodPos = filename.rfind('.');
 	if (periodPos != std::string::npos)
 	{
 		filename.erase(periodPos);
@@ -203,11 +203,29 @@ int main(int argc, char* argv[])
 		args.assign(argv + 1, argv + argc);
 	}
 
-	std::size_t n_args = args.size();
+	const size_t n_args = args.size();
 	const std::string execName = stripFilenamePathExt(argv[0]);
 
 	Lime::Interface inf;
 
+	// parse arguments
+
+	std::vector<std::string> freeParams; // filenames
+
+	for (auto const& arg : args)
+	{
+		size_t argLength = arg.size();
+		std::string option;
+		if (argLength >= 2 && arg[0] == '-')
+		{
+			const size_t optionStart = (argLength >= 3 && arg[1] == '-') ? 2 : 1;
+			option = arg.substr(optionStart);
+			const size_t equalsPos = option.find_first_of('=');	
+			inf << option << "\n";
+		}
+	}
+
+	/*
 	printHeader(inf, execName);
 
 	if (n_args >= 1 && (args[0] == "--help" || args[0] == "-h"))
@@ -235,7 +253,7 @@ int main(int argc, char* argv[])
 			<< Lime::Interface::Color::DEFAULT
 			<< " for more information.\n";
 	}
-
+	*/
 	inf << Lime::Interface::Color::DEFAULT;
 
 #if !defined(_WIN32)

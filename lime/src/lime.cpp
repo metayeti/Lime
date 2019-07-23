@@ -32,6 +32,7 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 #include <algorithm>
 #include "interface.h"
 #include "dict.h"
@@ -60,19 +61,7 @@ void printHeader(Lime::Interface& inf, std::string const& execName)
 		<< Lime::Interface::Color::GRAY
 		<< "   Game datafile packer\n"
 		<< "(c) " << LIME_COPYRIGHT_YEAR << " " << LIME_COPYRIGHT_AUTHOR
-		<< "\n\n"
-		<< Lime::Interface::Color::DEFAULT
-		<< "Usage:\n\n"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "  " << execName << " ["
-		<< Lime::Interface::Color::BRIGHTGREEN
-		<< "resource manifest file"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "] ["
-		<< Lime::Interface::Color::BRIGHTGREEN
-		<< "output file"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "]\n\n";
+		<< "\n\n";
 }
 
 void printHelp(Lime::Interface& inf, std::string const& execName)
@@ -211,22 +200,51 @@ int main(int argc, char* argv[])
 	// parse arguments
 
 	std::vector<std::string> freeParams; // filenames
+	std::vector<std::pair<std::string, std::string>> optionParams;
 
 	for (auto const& arg : args)
 	{
 		size_t argLength = arg.size();
-		std::string option;
 		if (argLength >= 2 && arg[0] == '-')
 		{
-			const size_t optionStart = (argLength >= 3 && arg[1] == '-') ? 2 : 1;
-			option = arg.substr(optionStart);
-			const size_t equalsPos = option.find_first_of('=');	
-			inf << option << "\n";
+			// parameter is an option
+			const std::string option = arg.substr(1);
+			const size_t equalsPos = option.find_first_of('=');
+			if (equalsPos != std::string::npos)
+			{
+				std::string optionKey = option.substr(0, equalsPos);
+				std::transform(optionKey.begin(), optionKey.end(), optionKey.begin(), ::tolower);
+				const std::string optionValue = option.substr(equalsPos + 1);
+				optionParams.push_back({ optionKey, optionValue });
+			}
+		}
+		else
+		{
+			// add to free parameters
+			freeParams.push_back(arg);
+		}
+	}
+
+	printHeader(inf, execName);
+
+	inf
+		<< Lime::Interface::Color::DEFAULT
+		<< "Usage:\n\n"
+		<< "  " << execName << " {options...} [resource manifest file] [output file]\n\n"
+		<< "Use " << execName << " --help for more information.\n";
+
+
+	if (n_args >= 1 && (args[0] == "--help" || args[0] == "-h"))
+	{
+		if (n_args == 1)
+		{
+		}
+		else
+		{
 		}
 	}
 
 	/*
-	printHeader(inf, execName);
 
 	if (n_args >= 1 && (args[0] == "--help" || args[0] == "-h"))
 	{

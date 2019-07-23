@@ -48,10 +48,9 @@ const char* const PATH_SEPARATOR = "\\";
 const char* const PATH_SEPARATOR = "/";
 #endif
 
-void printHeader(Lime::Interface& inf, std::string const& execName)
+void printHeader(Lime::Interface& inf)
 {
 	inf
-		<< "\n"
 		<< Lime::Interface::Color::BRIGHTGREEN
 		<< " -----| Lime "
 		<< Lime::Interface::Color::BRIGHTWHITE
@@ -61,7 +60,15 @@ void printHeader(Lime::Interface& inf, std::string const& execName)
 		<< Lime::Interface::Color::GRAY
 		<< "   Game datafile packer\n"
 		<< "(c) " << LIME_COPYRIGHT_YEAR << " " << LIME_COPYRIGHT_AUTHOR
+		<< Lime::Interface::Color::DEFAULT
 		<< "\n\n";
+}
+
+void printUsage(Lime::Interface& inf, std::string const& execName)
+{
+	inf
+		<< "Usage:\n\n"
+		<< "  " << execName << " {options...} [resource manifest file] [output file]\n\n";
 }
 
 void printHelp(Lime::Interface& inf, std::string const& execName)
@@ -225,23 +232,128 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	printHeader(inf, execName);
-
-	inf
-		<< Lime::Interface::Color::DEFAULT
-		<< "Usage:\n\n"
-		<< "  " << execName << " {options...} [resource manifest file] [output file]\n\n"
-		<< "Use " << execName << " --help for more information.\n";
-
+	inf << "\n";
 
 	if (n_args >= 1 && (args[0] == "--help" || args[0] == "-h"))
 	{
 		if (n_args == 1)
 		{
+			inf << "Use this utility to pack your Lime datafiles.\n\n";
+			printUsage(inf, execName);
+			inf
+				<< "Options:\n\n"
+				<< "  -clevel=[0..9] (default: 9)\n"
+				<< "    Compression level. 0 is no compression, 9 is highest compression.\n\n"
+				<< "  -head=[\"string\"] (default: none)\n"
+				<< "    Head string used for datafile identification.\n\n"
+				<< "  -padding=[number] (default: 0)\n"
+				<< "    Amount of random bytes to add between data.\n\n"
+				<< "  -h [topic]\n"
+				<< "    Show help for given topic.\n\n"
+				<< "Help topics: basic, examples, structure, manifest, clevel, head, padding\n";
 		}
 		else
 		{
+			//printUsage(inf, execName);
+			const std::string helpTopic(args[1]);
+			if (helpTopic == "basic") {
+				inf
+					<< "Use this utility to pack your Lime datafiles.\n\n"
+					<< "Basic syntax (with all options set to default) is as follows:\n\n"
+					<< "  " << execName << " [resource manifest file] [output file]\n\n"
+					<< "The resource manifest file is an INI-formatted file that lists assets\n"
+					<< "to be packed in the datafile.\n\n"
+					<< "Use " << execName << " -h manifest to learn more about the resource manifest file.\n\n"
+					<< "Use " << execName << " -h examples to see more usage examples.\n";
+			}
+			else if (helpTopic == "examples") {
+				inf
+					<< "Listed below are some common usage examples.\n\n"
+					<< "Pack resources listed in resources.manifest into example.dat:\n\n"
+					<< "  " << execName << " resources.manifest example.dat\n\n"
+					<< "Pack a datafile without compressing data:\n\n"
+					<< "  " << execName << " -clevel=0 resources.manifest example.dat\n\n"
+					<< "Pack a datafile with a predefined header string:\n\n"
+					<< "  " << execName << " -head=\"my project\" resources.manifest example.dat\n\n"
+					<< "Use multiple options:\n\n"
+					<< "  " << execName << " -clevel=5 -head=\"my project\" resources.manifest example.dat\n\n"
+					<< "Note: when options are left unspecified, default values will be used.\n";
+			}
+			else if (helpTopic == "structure") {
+				inf <<
+					"Datafile structure:\n\n"
+					"         Z0           Z1    ...   Zn\n"
+					"        [~~~~~~~~~~] [~~~] [~~~] [~~~]      (zipped content)\n\n"
+					"  head   dictionary   user resources   checksum\n"
+					"|______|____________|________________|__________|\n"
+					"             |\n"
+					"             |\n"
+					"             |\n"
+					"             |\n"
+					"         dictionary:\n\n"
+					"         N   section 1   ...   section N\n"
+					"       |___|___________|     |___________|\n"
+					"                 |\n"
+					"                 |\n"
+					"                 |\n"
+					"                 |\n"
+					"              category:\n\n"
+					"              category key   N   data 1   ...   data N\n"
+					"            |______________|___|________|     |________|\n"
+					"                                   |\n"
+					"                                   |\n"
+					"                                   |\n"
+					"                                 data:\n\n"
+					"                                 data key   seek_id   size\n"
+					"                               |__________|_________|______|\n\n\n"
+					"All non-resource strings are stored in the following manner:\n\n"
+					"  length   string\n"
+					"|________|________|\n";
+			}
+			else if (helpTopic == "manifest") {
+				inf
+					<< "To pack a datafile, you will first need to create a resource manifest.\n"
+					<< "The resource manifest is an INI-formatted file with the following syntax:\n\n"
+					<< "  ; comment\n"
+					<< "  [category]\n"
+					<< "  key = value\n\n"
+					<< "An example resource manifest entry can look like this:\n\n"
+					<< "  ; graphics assets for my project\n"
+					<< "  [graphics]\n"
+					<< "  sprite1 = graphics" << PATH_SEPARATOR << "sprite1.png\n"
+					<< "  sprite2 = graphics" << PATH_SEPARATOR << "sprite2.png\n\n"
+					<< "Lime interprets every value as a file containing data to be packed. Note\n"
+					<< "that filenames are lost in the process. You will be able to access data\n"
+					<< "using the category and key provided in the manifest.\n\n"
+					<< "Note also that Lime does not contain any information about the\n"
+					<< "type of data stored in it.\n\n"
+					<< "It is recommended that you create a structure where categories reflect\n"
+					<< "the type of data contained in them - so for example everything in the\n"
+					<< "graphics category will be image data of some kind.\n\n"
+					<< "Category and key names are stripped of leading and trailing whitespace\n"
+					<< "and are case sensitive. They can contain spaces.\n\n"
+					<< "You can also add meta-categories to the resource manifest by prefixing\n"
+					<< "the category name with @. In this case, all values in the category will\n"
+					<< "be stored directly:\n\n"
+					<< "  [@metadata]\n"
+					<< "  important info = Giraffes are awesome!\n";
+			}
+			else if (helpTopic == "clevel") {
+			}
+			else if (helpTopic == "head") {
+			}
+			else if (helpTopic == "padding") {
+			}
+			else {
+				inf << "Unknown help topic: " << helpTopic << "\n";
+			}
 		}
+	}
+	else
+	{
+		printHeader(inf);
+		printUsage(inf, execName);
+		inf << "Use " << execName << " --help for more information.\n";
 	}
 
 	/*

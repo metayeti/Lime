@@ -41,7 +41,6 @@ namespace Lime
 
 		Datafile structure:
 
-
 		         Z0           Z1    ...   Zn
 		        [~~~~~~~~~~] [~~~] [~~~] [~~~]        (zipped content)
 
@@ -70,6 +69,11 @@ namespace Lime
 
 		                                data key   seek_id   size
 		                              |__________|_________|______|
+
+		All strings are stored in the following manner:
+		
+		  length   string
+		|________|________|
 
 		*/
 

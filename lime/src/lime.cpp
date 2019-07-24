@@ -244,13 +244,15 @@ int main(int argc, char* argv[])
 				<< "Options:\n\n"
 				<< "  -clevel=[0..9] (default: 9)\n"
 				<< "    Compression level. 0 is no compression, 9 is highest compression.\n\n"
+				<< "  -chksum=[adler32|crc32|none] (default: adler32)\n"
+				<< "    Selects the checksum algorithm to use for data integrity check.\n\n"
 				<< "  -head=[\"string\"] (default: none)\n"
 				<< "    Head string used for datafile identification.\n\n"
 				<< "  -padding=[number] (default: 0)\n"
 				<< "    Amount of random bytes to add between data.\n\n"
 				<< "  -h [topic]\n"
 				<< "    Show help for given topic.\n\n"
-				<< "Help topics: basic, examples, structure, manifest, clevel, head, padding\n";
+				<< "Help topics: basic, examples, structure, manifest, clevel, chksum, head, padding\n";
 		}
 		else
 		{
@@ -280,39 +282,39 @@ int main(int argc, char* argv[])
 					<< "Note: when options are left unspecified, default values will be used.\n";
 			}
 			else if (helpTopic == "structure") {
-				inf <<
-					"Datafile structure:\n\n"
-					"         Z0           Z1    ...   Zn\n"
-					"        [~~~~~~~~~~] [~~~] [~~~] [~~~]      (zipped content)\n\n"
-					"  head   dictionary   user resources   checksum\n"
-					"|______|____________|________________|__________|\n"
-					"             |\n"
-					"             |\n"
-					"             |\n"
-					"             |\n"
-					"         dictionary:\n\n"
-					"         N   section 1   ...   section N\n"
-					"       |___|___________|     |___________|\n"
-					"                 |\n"
-					"                 |\n"
-					"                 |\n"
-					"                 |\n"
-					"              category:\n\n"
-					"              category key   N   data 1   ...   data N\n"
-					"            |______________|___|________|     |________|\n"
-					"                                   |\n"
-					"                                   |\n"
-					"                                   |\n"
-					"                                 data:\n\n"
-					"                                 data key   seek_id   size\n"
-					"                               |__________|_________|______|\n\n\n"
-					"All non-resource strings are stored in the following manner:\n\n"
-					"  length   string\n"
-					"|________|________|\n";
+				inf
+					<< "Lime datafile structure:\n\n"
+					<< "            Z0           Z1    ...   Zn\n"
+					<< "           [~~~~~~~~~~] [~~~] [~~~] [~~~]      (zipped content)\n\n"
+					<< "   header   dictionary   user resources   end\n"
+					<< " |________|____________|________________|_____|\n"
+					<< "                |\n"
+					<< "                |\n"
+					<< "                |\n"
+					<< "            dictionary:\n\n"
+					<< "            N   category 1   ...   category N\n"
+					<< "          |___|____________|     |____________|\n"
+					<< "                    |\n"
+					<< "                    |\n"
+					<< "                    |\n"
+					<< "                 category:\n\n"
+					<< "                 category key*  N   data 1   ...   data N\n"
+					<< "               |______________|___|________|     |________|\n"
+					<< "                                      |\n"
+					<< "                                      |\n"
+					<< "                                      |\n"
+					<< "                                    data:\n\n"
+					<< "                                    data key*  seek_id   size   checksum\n"
+					<< "                                  |__________|_________|______|__________|\n\n"
+					<< "Header:\n\n"
+					<< "   bgn   version*  head*  dict size   data size\n"
+					<< " |_____|_________|______|___________|___________|\n\n"
+					<< "All non-resource strings* are stored in the following manner:\n\n"
+					<< "   length   string\n"
+					<< " |________|________|\n";
 			}
 			else if (helpTopic == "manifest") {
 				inf
-					<< "To pack a datafile, you will first need to create a resource manifest.\n"
 					<< "The resource manifest is an INI-formatted file with the following syntax:\n\n"
 					<< "  ; comment\n"
 					<< "  [category]\n"
@@ -339,6 +341,8 @@ int main(int argc, char* argv[])
 					<< "  important info = Giraffes are awesome!\n";
 			}
 			else if (helpTopic == "clevel") {
+			}
+			else if (helpTopic == "chksum") {
 			}
 			else if (helpTopic == "head") {
 			}

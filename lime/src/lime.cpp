@@ -71,108 +71,6 @@ void printUsage(Lime::Interface& inf, std::string const& execName)
 		<< "  " << execName << " {options...} [resource manifest file] [output file]\n\n";
 }
 
-void printHelp(Lime::Interface& inf, std::string const& execName)
-{
-	inf
-		<< Lime::Interface::Color::DEFAULT
-		<< "Use this utility to pack your Lime datafiles.\n\n"
-		<< "To pack a datafile, you will first need to create a resource manifest.\n"
-		<< "The resource manifest is an INI-formatted file with the following syntax:\n\n"
-		<< Lime::Interface::Color::GRAY
-		<< "  ; comment\n"
-		<< Lime::Interface::Color::BRIGHTRED
-		<< "  ["
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "category"
-		<< Lime::Interface::Color::BRIGHTRED
-		<< "]\n"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "  key "
-		<< Lime::Interface::Color::BRIGHTGREEN
-		<< "="
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< " value\n\n"
-		<< Lime::Interface::Color::DEFAULT
-		<< "An example resource manifest entry can look like this:\n\n"
-		<< Lime::Interface::Color::GRAY
-		<< "  ; graphics for my awesome game\n"
-		<< Lime::Interface::Color::BRIGHTRED
-		<< "  ["
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "graphics"
-		<< Lime::Interface::Color::BRIGHTRED
-		<< "]\n"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "  sprite1 "
-		<< Lime::Interface::Color::BRIGHTGREEN
-		<< "="
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< " graphics" << PATH_SEPARATOR << "sprite1.png\n"
-		<< "  sprite2 "
-		<< Lime::Interface::Color::BRIGHTGREEN
-		<< "="
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< " graphics" << PATH_SEPARATOR << "sprite2.png\n\n"
-		<< Lime::Interface::Color::DEFAULT
-		<< "Lime interprets every value as a file containing data to be packed. Note\n"
-		<< "that filenames are lost in the process. You will be able to access data\n"
-		<< "based on the category and key provided.\n\n"
-		<< "Note also that a Lime datafile does not contain any information about the\n"
-		<< "type of data stored in it.\n\n"
-		<< "It is recommended that you create a structure where categories reflect\n"
-		<< "the type of data contained in them - so for example everything in the\n"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "graphics"
-		<< Lime::Interface::Color::DEFAULT
-		<< " category will be an image of some kind. If you need further\n"
-		<< "type information, you can use a category name like "
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "graphics:png"
-		<< Lime::Interface::Color::DEFAULT
-		<< " to\n"
-		<< "be even more specific or use a naming scheme that makes sense to you.\n\n"
-		<< "You can also add meta-categories to the resource manifest by prefixing\n"
-		<< "the category name with "
-		<< Lime::Interface::Color::BRIGHTCYAN
-		<< "@"
-		<< Lime::Interface::Color::DEFAULT
-		<< ". In this case, all values in the category will\n"
-		<< "be stored directly:\n\n"
-		<< Lime::Interface::Color::BRIGHTRED
-		<< "  ["
-		<< Lime::Interface::Color::BRIGHTCYAN
-		<< "@"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "category"
-		<< Lime::Interface::Color::BRIGHTRED
-		<< "]\n"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "  important info "
-		<< Lime::Interface::Color::BRIGHTGREEN
-		<< "="
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< " Dinosaurs are awesome!\n\n"
-		<< Lime::Interface::Color::DEFAULT
-		<< "When you have the resource manifest file ready, you can use the utility:\n\n"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "  " << execName << " resources.manifest datafile.dat\n\n"
-		<< Lime::Interface::Color::DEFAULT
-		<< "This will generate a "
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "datafile.dat"
-		<< Lime::Interface::Color::DEFAULT
-		<< " based on resources listed in the\n"
-		<< Lime::Interface::Color::BRIGHTWHITE
-		<< "resources.manifest"
-		<< Lime::Interface::Color::DEFAULT
-		<< " file. If the resource manifest changes often, it is\n"
-		<< "recommended to create a batch script to simplify your development flow.	\n\n"
-		<< "Typically, such a script would call this utility and then copy the\n"
-		<< "datafile to where it is needed. When an error level 1 is raised, the\n"
-		<< "utility was unable to produce a datafile and an error message will be\n"
-		<< "displayed.\n";
-}
-
 std::string stripFilenamePathExt(const char* const fullPathFilename)
 {
 	// strips a filename path and extension and makes the output lowercase
@@ -248,7 +146,7 @@ int main(int argc, char* argv[])
 				<< "    Selects the checksum algorithm to use for data integrity check.\n\n"
 				<< "  -head=[\"string\"] (default: none)\n"
 				<< "    Head string used for datafile identification.\n\n"
-				<< "  -padding=[number] (default: 0)\n"
+				<< "  -padding=[number|rand(a,b)] (default: 0)\n"
 				<< "    Amount of random bytes to add between data.\n\n"
 				<< "  -h [topic]\n"
 				<< "    Show help for given topic.\n\n"
@@ -298,14 +196,14 @@ int main(int argc, char* argv[])
 					<< "                    |\n"
 					<< "                    |\n"
 					<< "                 category:\n\n"
-					<< "                 category key*  N   data 1   ...   data N\n"
+					<< "                 category key*  M   data 1   ...   data M\n"
 					<< "               |______________|___|________|     |________|\n"
 					<< "                                      |\n"
 					<< "                                      |\n"
 					<< "                                      |\n"
 					<< "                                    data:\n\n"
 					<< "                                    data key*  seek_id   size   checksum\n"
-					<< "                                  |__________|_________|______|__________|\n\n"
+					<< "                                  |__________|_________|______|..........|\n\n"
 					<< "Header:\n\n"
 					<< "   bgn   version*  head*  dict size   data size\n"
 					<< " |_____|_________|______|___________|___________|\n\n"
@@ -341,12 +239,59 @@ int main(int argc, char* argv[])
 					<< "  important info = Giraffes are awesome!\n";
 			}
 			else if (helpTopic == "clevel") {
+				inf
+					<< "The clevel option is used to select the level of compression. Higher levels\n"
+					<< "compress more but decompression takes more CPU time, so it is essentially a\n"
+					<< "tradeoff between time and file size. To disable compression altogether,\n"
+					<< "set clevel to 0. Default level is 9 which is the highest compression level.\n\n"
+					<< "Usage: -clevel=[0..9]\n\n"
+					<< "Examples:\n\n"
+					<< "Pack a datafile without compressing data:\n\n"
+					<< "  " << execName << " -clevel=0 resources.manifest example.dat\n\n"
+					<< "Pack a datafile using compression level 5:\n\n"
+					<< "  " << execName << " -clevel=5 resources.manifest example.dat\n";
 			}
 			else if (helpTopic == "chksum") {
+				inf
+					<< "The chksum option selects the checksum algorithm. Available options are:\n\n"
+					<< "  adler32 (default)\n"
+					<< "  crc32\n"
+					<< "  none\n\n"
+					<< "A checksum is attached to each user resource and is used for data integrity\n"
+					<< "check. Adler32 is faster and slightly less reliable than crc32.\n\n"
+					<< "The type of the checksum function is implicitly defined by the bgn and end\n"
+					<< "endpoints in the Lime datafile. Adler32 will use LM> and <LM, crc32 will\n"
+					<< "use LM~ and /LM, and no checksum will use LM) and (LM.\n\n"
+					<< "Regardless of the checksum function used (or not used), you can skip data\n"
+					<< "integrity check through the Unlime class if needed.\n\n"
+					<< "Usage: -chksum=[adler32|crc32|none]\n\n"
+					<< "Examples:\n\n"
+					<< "Pack a datafile using the crc32 algorithm for checksums:\n"
+					<< "  " << execName << " -chksum=crc32 resources.manifest example.dat\n\n"
+					<< "Pack a datafile without writing checksums:\n"
+					<< "  " << execName << " -chksum=none resources.manifest example.dat\n";
 			}
 			else if (helpTopic == "head") {
+				inf
+					<< "Head is a custom string that can be used to identify the datafile.\n\n"
+					<< "Usage: -head=[\"string\"]\n\n"
+					<< "Examples:\n\n"
+					<< "Pack a datafile with a simple head string:\n"
+					<< "  " << execName << " -head=myproject resources.manifest example.dat\n\n"
+					<< "Pack a datafile using a head string with several spaces:\n"
+					<< "  " << execName << " -head=\"string of custom length\" resources.manifest example.dat\n";
 			}
 			else if (helpTopic == "padding") {
+				inf
+					<< "Padding adds a number of random bytes before, after, and between user resources.\n"
+					<< "This is mostly useless and shouldn't be used as a security measure. It is\n"
+					<< "provided mostly as a \"why not\" feature.\n\n"
+					<< "Usage: -padding=[number|rand(a,b)]\n\n"
+					<< "Examples:\n\n"
+					<< "Add 10 randomized bytes before, after, and between user resources:\n"
+					<< "  " << execName << " -padding=10 resources.manifest example.dat\n\n"
+					<< "Add anywhere between 3 to 20 randomized bytes before, after, and between user resources:\n"
+					<< "  " << execName << " -padding=rand(3,20) resources.manifest example.dat\n";
 			}
 			else {
 				inf << "Unknown help topic: " << helpTopic << "\n";
@@ -360,34 +305,6 @@ int main(int argc, char* argv[])
 		inf << "Use " << execName << " --help for more information.\n";
 	}
 
-	/*
-
-	if (n_args >= 1 && (args[0] == "--help" || args[0] == "-h"))
-	{
-		if (n_args == 1)
-		{
-			printHelp(inf, execName);
-		}
-		else
-		{
-		}
-	}
-	else if (n_args == 2)
-	{
-		std::string const& resourceManifestFilename = args[0];
-		std::string const& outputFilename = args[1];
-	}
-	else
-	{
-		inf
-			<< Lime::Interface::Color::DEFAULT
-			<< "Use "
-			<< Lime::Interface::Color::BRIGHTWHITE
-			<< execName << " --help"
-			<< Lime::Interface::Color::DEFAULT
-			<< " for more information.\n";
-	}
-	*/
 	inf << Lime::Interface::Color::DEFAULT;
 
 #if !defined(_WIN32)

@@ -287,7 +287,11 @@ namespace Lime
 					// pack data from file
 					const size_t resFileSize = fileSize(resFilename.c_str());
 					FILE* resFile;
+#if defined(_WIN32)
 					if (fopen_s(&resFile, resFilename.c_str(), "rb") != 0)
+#else
+					if ((resFile = fopen(resFilename.c_str(), "rb")) == nullptr)
+#endif
 					{
 						// abort packing
 						gzclose(outFile);
@@ -309,7 +313,11 @@ namespace Lime
 
 						Bytef* buffer = new Bytef[16348];
 						size_t numRead = 0;
+#if defined(_WIN32)
 						while ((numRead = fread_s(buffer, 16348u, 1, sizeof(buffer), resFile)) > 0)
+#else
+						while ((numRead = fread(buffer, 1, 16348u, resFile)) > 0)
+#endif
 						{
 							totalRead += numRead;
 							if (gzwrite(outFile, buffer, static_cast<unsigned int>(numRead)) != static_cast<int>(numRead))

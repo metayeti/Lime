@@ -41,20 +41,17 @@ namespace Lime
 		str.erase(0, str.find_first_not_of(whitespaceDelimiters));
 	}
 
-	INIParse::PDataType INIParse::parseLine(std::string line, T_ParseValues& parseData)
+	INIParse::PData INIParse::parseLine(std::string line)
 	{
-		parseData.first.clear();
-		parseData.second.clear();
-
 		trim(line);
 		if (line.empty())
 		{
-			return PDataType::PDATA_NONE;
+			return { PDataType::PDATA_NONE };
 		}
 		const char firstCharacter = line.at(0);
 		if (firstCharacter == ';')
 		{
-			return PDataType::PDATA_COMMENT;
+			return { PDataType::PDATA_COMMENT };
 		}
 		if (firstCharacter == '[')
 		{
@@ -68,8 +65,7 @@ namespace Lime
 			{
 				std::string section = line.substr(1, closingBracketAt - 1);
 				trim(section);
-				parseData.first = section;
-				return PDataType::PDATA_SECTION;
+				return { PDataType::PDATA_SECTION, section };
 			}
 		}
 		const size_t equalsAt = line.find_first_of('=');
@@ -79,10 +75,9 @@ namespace Lime
 			trim(key);
 			std::string value = line.substr(equalsAt + 1);
 			trim(value);
-			parseData = { key, value };
-			return PDataType::PDATA_KEYVALUE;
+			return { PDataType::PDATA_KEYVALUE, key, value };
 		}
 
-		return PDataType::PDATA_UNKNOWN;
+		return { PDataType::PDATA_UNKNOWN };
 	}
 }

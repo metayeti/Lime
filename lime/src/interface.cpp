@@ -102,4 +102,11 @@ namespace Lime
 #endif
 	}
 
+	Interface& Interface::ok(const std::string msg)
+	{
+		return *this
+			<< Lime::Interface::Color::BRIGHTGREEN
+			<< msg
+			<< Lime::Interface::Color::DEFAULT;
+	}
 }

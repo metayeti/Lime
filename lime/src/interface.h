@@ -97,11 +97,14 @@ namespace Lime
 		Interface& error(T message)
 		{
 			return *this
+				<< "\n\n"
 				<< Color::BRIGHTRED
 				<< "Error: "
 				<< Color::DEFAULT
 				<< message;
 		}
+		
+		Interface& ok(const std::string msg = "ok");
 	};
 
 }

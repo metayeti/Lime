@@ -156,7 +156,7 @@ namespace Lime
 
 	using Dict = DMap<DMap<std::string>>;
 
-	Dict readDictFromFile(const char* const resourceManifestFilename);
+	Dict readDictFromFile(std::string const& resourceManifestFilename);
 }
 
 #endif // LIME_DICT_H_

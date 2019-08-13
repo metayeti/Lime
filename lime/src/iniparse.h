@@ -30,16 +30,15 @@
   *
   */
 
+#pragma once
+
 #include <string>
-#include <utility>
 
 namespace Lime
 {
 	namespace INIParse
 	{
 		const std::string whitespaceDelimiters = " \t\n\r\f\v";
-
-		using T_ParseValues = std::pair<std::string, std::string>;
 
 		enum class PDataType : char
 		{
@@ -50,10 +49,15 @@ namespace Lime
 			PDATA_UNKNOWN
 		};
 
+		struct PData
+		{
+			PDataType type;
+			std::string key;
+			std::string value;
+		};
+
 		void trim(std::string& str);
 
-		PDataType parseLine(std::string line, T_ParseValues& parseData);
+		PData parseLine(std::string line);
 	};
 }
-
-#pragma once

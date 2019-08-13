@@ -34,6 +34,8 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include <stdexcept>
+#include <cstdlib>
 #include "interface.h"
 #include "dict.h"
 #include "pack.h"
@@ -146,11 +148,9 @@ int main(int argc, char* argv[])
 				<< "    Selects the checksum algorithm to use for data integrity check.\n\n"
 				<< "  -head=[\"string\"] (default: none)\n"
 				<< "    Head string used for datafile identification.\n\n"
-				<< "  -padding=[number|rand(a,b)] (default: 0)\n"
-				<< "    Amount of random bytes to add between data.\n\n"
 				<< "  -h [topic]\n"
 				<< "    Show help for given topic.\n\n"
-				<< "Help topics: basic, examples, structure, manifest, clevel, chksum, head, padding\n";
+				<< "Help topics: basic, examples, structure, manifest, clevel, chksum, head\n";
 		}
 		else
 		{
@@ -225,13 +225,13 @@ int main(int argc, char* argv[])
 					<< "Lime interprets every value as a file containing data to be packed. Note\n"
 					<< "that filenames are lost in the process. You will be able to access data\n"
 					<< "using the category and key provided in the manifest.\n\n"
-					<< "Note also that Lime does not contain any information about the\n"
-					<< "type of data stored in it.\n\n"
-					<< "It is recommended that you create a structure where categories reflect\n"
-					<< "the type of data contained in them - so for example everything in the\n"
-					<< "graphics category will be image data of some kind.\n\n"
+					<< "Note also that a Lime datafile does not contain any information about the\n"
+					<< "type of data stored inside.\n\n"
+					<< "It is recommended that you create a structure where categories make the\n"
+					<< "type of data contained in them implicit - for example, the \"graphics\"\n"
+					<< "category will store only image data, and so on.\n\n"
 					<< "Category and key names are stripped of leading and trailing whitespace\n"
-					<< "and are case sensitive. They can contain spaces.\n\n"
+					<< "and are case sensitive. They can contain spaces and other symbols.\n\n"
 					<< "You can also add meta-categories to the resource manifest by prefixing\n"
 					<< "the category name with @. In this case, all values in the category will\n"
 					<< "be stored directly:\n\n"
@@ -260,10 +260,10 @@ int main(int argc, char* argv[])
 					<< "A checksum is attached to each user resource and is used for data integrity\n"
 					<< "check. Adler32 is faster and slightly less reliable than crc32.\n\n"
 					<< "The type of the checksum function is implicitly defined by the bgn and end\n"
-					<< "endpoints in the Lime datafile. Adler32 will use LM> and <LM, crc32 will\n"
-					<< "use LM~ and /LM, and no checksum will use LM) and (LM.\n\n"
+					<< "endpoints in the Lime datafile. Adler32 will use LM> and <LM, CRC32 will\n"
+					<< "use LM] and [LM, and a file with no checksums will use LM) and (LM.\n\n"
 					<< "Regardless of the checksum function used (or not used), you can skip data\n"
-					<< "integrity check through the Unlime class if needed.\n\n"
+					<< "integrity check when unpacking the file if you so desire.\n\n"
 					<< "Usage: -chksum=[adler32|crc32|none]\n\n"
 					<< "Examples:\n\n"
 					<< "Pack a datafile using the crc32 algorithm for checksums:\n"
@@ -281,21 +281,59 @@ int main(int argc, char* argv[])
 					<< "Pack a datafile using a head string with several spaces:\n"
 					<< "  " << execName << " -head=\"string of custom length\" resources.manifest example.dat\n";
 			}
-			else if (helpTopic == "padding") {
-				inf
-					<< "Padding adds a number of random bytes before, after, and between user resources.\n"
-					<< "This is mostly useless and shouldn't be used as a security measure. It is\n"
-					<< "provided mostly as a \"why not\" feature.\n\n"
-					<< "Usage: -padding=[number|rand(a,b)]\n\n"
-					<< "Examples:\n\n"
-					<< "Add 10 randomized bytes before, after, and between user resources:\n"
-					<< "  " << execName << " -padding=10 resources.manifest example.dat\n\n"
-					<< "Add anywhere between 3 to 20 randomized bytes before, after, and between user resources:\n"
-					<< "  " << execName << " -padding=rand(3,20) resources.manifest example.dat\n";
-			}
 			else {
 				inf << "Unknown help topic: " << helpTopic << "\n";
 			}
+		}
+	}
+	else if (freeParams.size() >= 2u) {
+
+		std::string const& resourceManifestFilename = freeParams[0];
+		std::string const& outputFilename = freeParams[1];
+
+		try {
+
+			printHeader(inf);
+
+			// prepare options
+			Lime::PackOptions options;
+
+			for (auto const& prop : optionParams) {
+				std::string const& propName = prop.first;
+				std::string propValue = prop.second;
+				if (propName == "clevel") {
+					options.clevel = static_cast<unsigned char>(std::stoul(propValue));
+				}
+				else if (propName == "chksum") {
+					std::transform(propValue.begin(), propValue.end(), propValue.begin(), ::tolower);
+					if (propValue == "adler32") {
+						options.chksum = Lime::ChkSumOption::ADLER32;
+					}
+					else if (propValue == "crc32") {
+						options.chksum = Lime::ChkSumOption::CRC32;
+					}
+					else if (propValue == "none" || propValue == "no") {
+						options.chksum = Lime::ChkSumOption::NONE;
+					}
+				}
+				else if (propName == "head") {
+					options.headstr = propValue;
+				}
+			}
+
+			inf << "Reading resource manifest ... ";
+
+			// read dictionary definitions from the resource manifest
+			Lime::Dict dict = Lime::readDictFromFile(resourceManifestFilename);
+
+			// successfully read resource manifest
+			inf.ok() << "\n\n";
+
+			// pack datafile
+			Lime::pack(inf, dict, outputFilename, options);
+		}
+		catch (std::runtime_error& e) {
+			inf.error(e.what()) << "\n";
 		}
 	}
 	else

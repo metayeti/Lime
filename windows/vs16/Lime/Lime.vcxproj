@@ -26,7 +26,7 @@
     <ClCompile Include="..\..\..\lime\src\pack.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lime\src\archive.h" />
+    <ClInclude Include="..\..\..\lime\src\const.h" />
     <ClInclude Include="..\..\..\lime\src\dict.h" />
     <ClInclude Include="..\..\..\lime\src\iniparse.h" />
     <ClInclude Include="..\..\..\lime\src\interface.h" />

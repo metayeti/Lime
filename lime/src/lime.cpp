@@ -39,10 +39,7 @@
 #include "interface.h"
 #include "dict.h"
 #include "pack.h"
-
-const char* const LIME_VERSION = "0.2.0";
-const char* const LIME_COPYRIGHT_YEAR = "2019";
-const char* const LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
+#include "const.h"
 
 #if defined(_WIN32)
 const char* const PATH_SEPARATOR = "\\";
@@ -56,12 +53,12 @@ void printHeader(Lime::Interface& inf)
 		<< Lime::Interface::Color::BRIGHTGREEN
 		<< " -----| Lime "
 		<< Lime::Interface::Color::BRIGHTWHITE
-		<< LIME_VERSION
+		<< Lime::LIME_VERSION
 		<< Lime::Interface::Color::BRIGHTGREEN
 		<< " |-----\n"
 		<< Lime::Interface::Color::GRAY
 		<< "   Game datafile packer\n"
-		<< "(c) " << LIME_COPYRIGHT_YEAR << " " << LIME_COPYRIGHT_AUTHOR
+		<< "(c) " << Lime::LIME_COPYRIGHT_YEAR << " " << Lime::LIME_COPYRIGHT_AUTHOR
 		<< Lime::Interface::Color::DEFAULT
 		<< "\n\n";
 }
@@ -202,8 +199,8 @@ int main(int argc, char* argv[])
 					<< "                                      |\n"
 					<< "                                      |\n"
 					<< "                                    data:\n\n"
-					<< "                                    data key*  seek_id   size   checksum\n"
-					<< "                                  |__________|_________|______|..........|\n\n"
+					<< "                                    data key*  seek_id   checksum\n"
+					<< "                                  |__________|_________|..........|\n\n"
 					<< "Header:\n\n"
 					<< "   bgn   version*  head*  dict size   data size\n"
 					<< " |_____|_________|______|___________|___________|\n\n"

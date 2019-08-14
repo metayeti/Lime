@@ -45,6 +45,82 @@
 
 namespace Lime
 {
+	inline bool systemIsLittleEndian()
+	{
+		static bool first = true;
+		static bool isLittleEndian = false;
+		if (first) {
+			first = false;
+			static const uint16_t n = 1;
+			return (isLittleEndian = (*((char*)& n) == 1));
+		}
+		return isLittleEndian;
+	}
+
+	// from http://stackoverflow.com/a/4956493/238609
+	template<typename T>
+	T swapEndianness(T value)
+	{
+		union
+		{
+			T value;
+			unsigned char u8[sizeof(T)];
+		} source, dest;
+
+		source.value = value;
+
+		for (size_t k = 0; k < sizeof(T); k++)
+			dest.u8[k] = source.u8[sizeof(T) - k - 1];
+
+		return dest.value;
+	}
+
+	template<typename T>
+	T toBigEndian(T value)
+	{
+		if (systemIsLittleEndian())
+		{
+			return swapEndianness<T>(value);
+		}
+		return value;
+	}
+
+	template<typename T>
+	T toLittleEndian(T value)
+	{
+		if (!systemIsLittleEndian())
+		{
+			return swapEndianness<T>(value);
+		}
+		return value;
+	}
+
+	using T_Bytes = std::vector<Bytef>;
+
+	template<typename T>
+	T_Bytes toBytes(T const& value)
+	{
+		T_Bytes bytes;
+		bytes.reserve(sizeof(T));
+		/*
+		for (size_t i = sizeof(T); i-- > 0; )
+		{
+			bytes.push_back(static_cast<Bytef>(value >> (i * 8)));
+		}
+		*/
+		for (size_t i = 0; i < sizeof(T); ++i)
+		{
+			bytes.push_back(static_cast<Bytef>(value >> (i * 8)));
+		}
+		return bytes;
+	}
+
+	template<class T>
+	inline void appendBytes(T_Bytes& bytesA, T const& bytesB)
+	{
+		bytesA.insert(bytesA.end(), bytesB.begin(), bytesB.end());
+	}
+
 	bool fileExists(const char* filename)
 	{
 		struct stat buff;
@@ -134,6 +210,20 @@ namespace Lime
 	void pack(Interface& inf, Dict& dict, std::string const& outputFilename, PackOptions& options)
 	{
 		/*
+		bool isLittleEnd = systemIsLittleEndian();
+		inf << "Is little endian: " << ((isLittleEnd) ? "yes" : "no");
+
+		uint16_t x = 0x1234;
+
+		inf << "\n\n" << std::to_string(x) << ", ";
+
+		x = toBigEndian<uint16_t>(x);
+
+		inf << std::to_string(x) << "\n";
+
+		return;
+		*/
+		/*
 
 		Lime datafile structure:
 
@@ -161,8 +251,8 @@ namespace Lime
 		                                      |
 		                                    data:
 
-		                                    data key*  seek_id   size   checksum
-		                                  |__________|_________|______|..........|
+		                                    data key*  seek_id   checksum
+		                                  |__________|_________|..........|
 
 		Header:
 
@@ -205,7 +295,7 @@ namespace Lime
 		};
 
 		std::unordered_map<std::string, std::unordered_map<std::string, DictItemData>> dictDataMap;
-		std::unordered_map<std::string, size_t> filenameOffsetMap;
+		std::unordered_map<std::string, size_t> filenameOffsetMap; // used for detecting duplicates
 
 		// first pack a temporary user data file
 		std::string tmpDataFilename = "~" + outputFilename;
@@ -255,7 +345,7 @@ namespace Lime
 						break;
 					}
 
-					// store offset and checksum
+					// store offset, size and checksum
 					dictDataMap[category][key] = { static_cast<size_t>(gzoffset(outFile)), checksum };
 				}
 				else
@@ -359,6 +449,91 @@ namespace Lime
 
 		// close the stream
 		gzclose(outFile);
+
+		// create the dictionary binary
+		T_Bytes dictBytes;
+
+		uint32_t N_categories = static_cast<uint32_t>(dict.size());
+		appendBytes(dictBytes, toBytes(toBigEndian(N_categories)));
+
+		for (auto const& it : dictDataMap)
+		{
+			auto const& categoryKey = it.first;
+			auto const& collection = it.second;
+
+			uint32_t categoryKeySize = static_cast<uint32_t>(categoryKey.size());
+			appendBytes(dictBytes, toBytes(toBigEndian(categoryKeySize)));
+			appendBytes(dictBytes, categoryKey);
+
+			uint32_t M_keys = static_cast<uint32_t>(collection.size());
+			appendBytes(dictBytes, toBytes(toBigEndian(M_keys)));
+
+			for (auto const& it2 : collection)
+			{
+				auto const& collectionKey = it2.first;
+				auto const& itemData = it2.second;
+
+				uint32_t collectionKeySize = static_cast<uint32_t>(collectionKey.size());
+				appendBytes(dictBytes, toBytes(toBigEndian(collectionKeySize)));
+				appendBytes(dictBytes, collectionKey);
+				
+				uint32_t seek_id = static_cast<uint32_t>(itemData.offset);
+				appendBytes(dictBytes, toBytes(toBigEndian(seek_id)));
+
+				if (options.chksum != ChkSumOption::NONE)
+				{
+					uint32_t const& checksum = itemData.checksum;
+					appendBytes(dictBytes, toBytes(toBigEndian(checksum)));
+				}
+			}
+		}
+
+		// compress dictionary binary
+
+		uLong dictBytesCompressedSize = compressBound(static_cast<uLong>(dictBytes.size()));
+
+		Bytef* dictBytesCompressedData = new Bytef[dictBytesCompressedSize];
+		
+		if (compress2(dictBytesCompressedData, &dictBytesCompressedSize, dictBytes.data(), static_cast<uLong>(dictBytes.size()), options.clevel) != Z_OK)
+		{
+			delete[] dictBytesCompressedData;
+			throw std::runtime_error("Unable to compress dictionary.");
+		}
+
+		////T_Bytes dictBytesCompressed(dictBytesCompressedData, dictBytesCompressedData + dictBytesCompressedSize);
+
+		// write to datafile
+
+		FILE* dataFile;
+#if defined(_WIN32)
+		if (fopen_s(&dataFile, outputFilename.c_str(), "wb") != 0)
+#else
+		if ((dataFile = fopen(outputFilename.c_str(), "wb")) == nullptr)
+#endif
+		{
+			// abort packing
+			delete[] dictBytesCompressedData;
+			throw std::runtime_error("Unable to open file for writing: " + outputFilename);
+		}
+
+		if (dataFile)
+		{
+
+			if (fwrite(dictBytesCompressedData, 1u, static_cast<size_t>(dictBytesCompressedSize), dataFile) != static_cast<size_t>(dictBytesCompressedSize))
+			{
+				// abort packing
+				fclose(dataFile);
+				remove(tmpDataFilename.c_str());
+				delete[] dictBytesCompressedData;
+				throw std::runtime_error("Unable to write to file: " + outputFilename);
+			}
+
+			fclose(dataFile);
+		}
+
+		// cleanup
+		delete[] dictBytesCompressedData;
+		////remove(tmpDataFilename.c_str());
 
 		// writing successful
 

@@ -534,7 +534,7 @@ namespace Lime
 		const std::string* limeVersion = &LIME_VERSION;
 		const std::string* headString = &options.headstr;
 
-		uint32_t dataSize = fileSize(tmpDataFilename.c_str());
+		uint32_t dataSize = static_cast<uint32_t>(fileSize(tmpDataFilename.c_str()));
 
 		// write to datafile
 
@@ -554,9 +554,9 @@ namespace Lime
 		if (dataFile)
 		{
 			// bgn endpoint
-			if (fwrite(bgnEndpoint->data(), 1u, bgnEndpoint->size(), dataFile) != bgnEndpoint->size())
+			if (bgnEndpoint && fwrite(bgnEndpoint->data(), 1u, bgnEndpoint->size(), dataFile) != bgnEndpoint->size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			// version length
@@ -564,13 +564,13 @@ namespace Lime
 			T_Bytes versionLengthBytes = toBytes(toBigEndian(versionLength));
 			if (fwrite(versionLengthBytes.data(), 1u, versionLengthBytes.size(), dataFile) != versionLengthBytes.size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			// version string
 			if (fwrite(limeVersion->data(), 1u, limeVersion->size(), dataFile) != limeVersion->size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			// head length
@@ -578,13 +578,13 @@ namespace Lime
 			T_Bytes headLengthBytes = toBytes(toBigEndian(headLength));
 			if (fwrite(headLengthBytes.data(), 1u, headLengthBytes.size(), dataFile) != headLengthBytes.size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			// head string
 			if (fwrite(headString->data(), 1u, headString->size(), dataFile) != headString->size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			// dict size
@@ -592,7 +592,7 @@ namespace Lime
 			T_Bytes dictSizeBytes = toBytes(toBigEndian(dictSize));
 			if (fwrite(dictSizeBytes.data(), 1u, dictSizeBytes.size(), dataFile) != dictSizeBytes.size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			// dict checksum
@@ -601,7 +601,7 @@ namespace Lime
 				T_Bytes dictChecksumBytes = toBytes(toBigEndian(dictChecksum));
 				if (fwrite(dictChecksumBytes.data(), 1u, dictChecksumBytes.size(), dataFile) != dictChecksumBytes.size())
 				{
-					throw std::runtime_error("?");
+					goto error;
 				}
 			}
 
@@ -609,20 +609,13 @@ namespace Lime
 			T_Bytes dataSizeBytes = toBytes(toBigEndian(dataSize));
 			if (fwrite(dataSizeBytes.data(), 1u, dataSizeBytes.size(), dataFile) != dataSizeBytes.size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			// write compressed dictionary
 			if (fwrite(dictBytesCompressedData, 1u, static_cast<size_t>(dictBytesCompressedSize), dataFile) != static_cast<size_t>(dictBytesCompressedSize))
 			{
-				throw std::runtime_error("?");
-				/*
-				// abort packing
-				fclose(dataFile);
-				remove(tmpDataFilename.c_str());
-				delete[] dictBytesCompressedData;
-				throw std::runtime_error("Unable to write to file: " + outputFilename);
-				*/
+				goto error;
 			}
 
 			// write compressed data from the temporary data file
@@ -633,7 +626,7 @@ namespace Lime
 			if ((cDataFile = fopen(tmpDataFilename.c_str(), "rb")) == nullptr)
 #endif
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 
 			if (cDataFile)
@@ -650,7 +643,9 @@ namespace Lime
 					totalDataRead += numRead;
 					if (fwrite(buffer, 1u, numRead, dataFile) != numRead)
 					{
-						throw std::runtime_error("?");
+						delete[] buffer;
+						fclose(cDataFile);
+						goto error;
 					}
 				}
 
@@ -659,25 +654,35 @@ namespace Lime
 
 				if (totalDataRead != dataSize)
 				{
-					// something isn't right
-					throw std::runtime_error("?");
+					// something isn't right here
+					goto error;
 				}
 			}
 
 			// end endpoint
-			if (fwrite(endEndpoint->data(), 1u, endEndpoint->size(), dataFile) != endEndpoint->size())
+			if (endEndpoint && fwrite(endEndpoint->data(), 1u, endEndpoint->size(), dataFile) != endEndpoint->size())
 			{
-				throw std::runtime_error("?");
+				goto error;
 			}
 			
 			// all done, close the file handle
 			fclose(dataFile);
 		}
 
+		goto success;
+
+	error:
+		// abort packing
+		delete[] dictBytesCompressedData;
+		fclose(dataFile);
+		std::remove(tmpDataFilename.c_str());
+		std::remove(outputFilename.c_str());
+		throw std::runtime_error("Something went wrong while writing to file: " + outputFilename);
+
+	success:
 		// cleanup
 		delete[] dictBytesCompressedData;
 		std::remove(tmpDataFilename.c_str());
-		
 
 		// writing successful
 

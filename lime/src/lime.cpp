@@ -199,14 +199,17 @@ int main(int argc, char* argv[])
 					<< "                                      |\n"
 					<< "                                      |\n"
 					<< "                                    data:\n\n"
-					<< "                                    data key*  seek_id   checksum\n"
+					<< "                                    data key*  seek_id+   checksum\n"
 					<< "                                  |__________|_________|..........|\n\n"
 					<< "Header:\n\n"
-					<< "   bgn   version*  head*  dict size   dict checksum   data size \n"
+					<< "   bgn   version*  head*  dict size   dict checksum   data size+\n"
 					<< " |_____|_________|______|___________|...............|___________|\n\n"
 					<< "All non-resource strings* are stored in the following manner:\n\n"
 					<< "   length   string\n"
-					<< " |________|________|\n";
+					<< " |________|________|\n\n"
+					<< "Strings use 8-bit unsigned integers to store length.\n"
+					<< "Numeric values are stored as 32-bit unsigned integers.\n"
+					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n";
 			}
 			else if (helpTopic == "manifest") {
 				inf

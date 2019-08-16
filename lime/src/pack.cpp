@@ -208,6 +208,15 @@ namespace Lime
 		}
 	}
 
+	inline void capStringSizeTo255(std::string& str)
+	{
+		// limit string size to 255
+		if (str.size() > 255u)
+		{
+			str = str.substr(0, 255u);
+		}
+	}
+
 	void pack(Interface& inf, Dict& dict, std::string const& outputFilename, PackOptions& options)
 	{
 		/*
@@ -238,18 +247,22 @@ namespace Lime
 		                                      |
 		                                    data:
 
-		                                    data key*  seek_id   checksum
+		                                    data key*  seek_id+  checksum
 		                                  |__________|_________|..........|
 
 		Header:
 
-		   bgn   version*  head*  dict size   dict checksum   data size
+		   bgn   version*  head*  dict size   dict checksum   data size+
 		 |_____|_________|______|___________|...............|___________|
 
 		All non-resource strings* are stored in the following manner:
 
 		   length   string
 		 |________|________|
+
+		Strings use 8-bit unsigned integers to store length.
+		Numeric values are stored as 32-bit unsigned integers.
+		Numeric values marked + are stored as 64-bit unsigned integers.
 
 		*/
 
@@ -260,9 +273,7 @@ namespace Lime
 		if (options.clevel > 9) {
 			options.clevel = 9;
 		}
-		if (options.headstr.size() > 255u) {
-			options.headstr = options.headstr.substr(0u, 255u);
-		}
+		capStringSizeTo255(options.headstr);
 
 		// print options info
 		printOptionsInfo(inf, options);
@@ -303,13 +314,17 @@ namespace Lime
 
 		for (auto it = dict.begin(); it != dict.end(); ++it)
 		{
-			auto const& category = it->first;
+			auto category = it->first;
+			capStringSizeTo255(category);
+
 			const bool isMeta = (category.length() && category[0] == '@');
 			auto const& collection = it->second;
 
 			for (auto it2 = collection.begin(); it2 != collection.end(); ++it2)
 			{
-				auto const& key = it2->first;
+				auto key = it2->first;
+				capStringSizeTo255(key);
+
 				auto const& value = it2->second;
 
 				uint32_t checksum = 0;
@@ -453,7 +468,7 @@ namespace Lime
 			auto const& categoryKey = it.first;
 			auto const& collection = it.second;
 
-			uint32_t categoryKeySize = static_cast<uint32_t>(categoryKey.size());
+			uint8_t categoryKeySize = static_cast<uint8_t>(categoryKey.size());
 			appendBytes(dictBytes, toBytes(toBigEndian(categoryKeySize)));
 			appendBytes(dictBytes, categoryKey);
 
@@ -469,11 +484,11 @@ namespace Lime
 
 				inf << "\n   -> " << collectionKey << "\n";
 
-				uint32_t collectionKeySize = static_cast<uint32_t>(collectionKey.size());
+				uint8_t collectionKeySize = static_cast<uint8_t>(collectionKey.size());
 				appendBytes(dictBytes, toBytes(toBigEndian(collectionKeySize)));
 				appendBytes(dictBytes, collectionKey);
 				
-				uint32_t seek_id = static_cast<uint32_t>(itemData.offset);
+				uint64_t seek_id = static_cast<uint64_t>(itemData.offset);
 				appendBytes(dictBytes, toBytes(toBigEndian(seek_id)));
 
 				if (options.chksum != ChkSumOption::NONE)
@@ -495,6 +510,8 @@ namespace Lime
 				dictChecksum = crc32(0ul, dictBytes.data(), static_cast<unsigned int>(dictBytes.size()));
 				break;
 		}
+
+		inf << "\nDict checksum: " << dictChecksum << "\n\n";
 
 		// compress dictionary binary
 
@@ -534,7 +551,7 @@ namespace Lime
 		const std::string* limeVersion = &LIME_VERSION;
 		const std::string* headString = &options.headstr;
 
-		uint32_t dataSize = static_cast<uint32_t>(fileSize(tmpDataFilename.c_str()));
+		uint64_t dataSize = static_cast<uint64_t>(fileSize(tmpDataFilename.c_str()));
 
 		// write to datafile
 
@@ -560,7 +577,7 @@ namespace Lime
 			}
 
 			// version length
-			uint32_t versionLength = static_cast<uint32_t>(limeVersion->size());
+			uint8_t versionLength = static_cast<uint8_t>(limeVersion->size());
 			T_Bytes versionLengthBytes = toBytes(toBigEndian(versionLength));
 			if (fwrite(versionLengthBytes.data(), 1u, versionLengthBytes.size(), dataFile) != versionLengthBytes.size())
 			{
@@ -574,7 +591,7 @@ namespace Lime
 			}
 
 			// head length
-			uint32_t headLength = static_cast<uint32_t>(headString->size());
+			uint8_t headLength = static_cast<uint8_t>(headString->size());
 			T_Bytes headLengthBytes = toBytes(toBigEndian(headLength));
 			if (fwrite(headLengthBytes.data(), 1u, headLengthBytes.size(), dataFile) != headLengthBytes.size())
 			{

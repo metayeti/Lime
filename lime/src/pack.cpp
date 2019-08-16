@@ -34,6 +34,8 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <utility>
+#include <iterator>
 #include <sys/stat.h>
 #include <cstdio>
 #include <cstdint>
@@ -247,13 +249,13 @@ namespace Lime
 		                                      |
 		                                    data:
 
-		                                    data key*  seek_id+  checksum
-		                                  |__________|_________|..........|
+		                                    data key*  seek_id+  size+  checksum
+		                                  |__________|_________|______|..........|
 
 		Header:
 
-		   bgn   version*  head*  dict size   dict checksum   data size+
-		 |_____|_________|______|___________|...............|___________|
+		   bgn   version*  head*  dict size   dict checksum   resources size+
+		 |_____|_________|______|___________|...............|________________|
 
 		All non-resource strings* are stored in the following manner:
 
@@ -290,11 +292,13 @@ namespace Lime
 		{
 			size_t offset = 0;
 			uint32_t checksum = 0;
+			size_t size = 0;
 		};
 
 		//std::unordered_map<std::string, std::unordered_map<std::string, DictItemData>> dictDataMap;
 
-		using T_DictData = DMap<DMap<DictItemData>>;
+		//using T_DictData = std::unordered_map<std::string, std::unordered_map<std::string, DictItemData>>; // random order dict
+		using T_DictData = DMap<DMap<DictItemData>>; // in-order dict
 		T_DictData dictDataMap;
 
 		std::unordered_map<std::string, size_t> filenameOffsetMap; // used for detecting duplicates
@@ -353,7 +357,8 @@ namespace Lime
 					}
 
 					// store offset, size and checksum
-					dictDataMap[category][key] = { static_cast<size_t>(gzoffset(outFile)), checksum };
+					const size_t offset = static_cast<size_t>(gzoffset(outFile));
+					dictDataMap[category][key] = { offset, checksum };
 				}
 				else
 				{
@@ -379,7 +384,8 @@ namespace Lime
 					}
 
 					// store current offset
-					dictDataMap[category][key] = { filenameOffsetMap[resFilename] = static_cast<size_t>(gzoffset(outFile)) };
+					const size_t offset = static_cast<size_t>(gzoffset(outFile));
+					dictDataMap[category][key] = { filenameOffsetMap[resFilename] = offset };
 
 					// pack data from file
 					const size_t resFileSize = fileSize(resFilename.c_str());
@@ -457,6 +463,68 @@ namespace Lime
 		// close the stream
 		gzclose(outFile);
 
+		// get total compressed data size
+		const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
+
+		// we need to do some processing here to calculate sizes for each resource
+		// size of each element is the offset of the next element, skipping duplicates
+		{
+			// calculate data node sizes
+			DictItemData* previousData = nullptr;
+			std::vector<size_t> knownOffsets;
+			std::vector<const DictItemData*> knownOffsetItems;
+			using T_DuplicateData = std::pair<DictItemData*, const DictItemData*>; // pair<ptr to duplicate, ptr to original>
+			std::vector<T_DuplicateData> duplicatesToUpdate;
+			size_t lastOffset = 0;
+
+			for (auto const& it : dictDataMap)
+			{
+				auto const& categoryKey = it.first;
+				auto const& collection = it.second;
+
+				for (auto const& it2 : collection)
+				{
+					auto const& collectionKey = it2.first;
+					DictItemData const& itemData = it2.second;
+					DictItemData& itemDataModifiable = dictDataMap[categoryKey][collectionKey];
+
+					lastOffset = itemData.offset;
+
+					auto knownOffsetIt = std::find(knownOffsets.begin(), knownOffsets.end(), lastOffset);
+
+					if (knownOffsetIt != knownOffsets.end())
+					{
+						// this is a duplicate offset
+						auto knownOffsetIndex = std::distance(knownOffsets.begin(), knownOffsetIt);
+						auto const* knownOffsetItem = knownOffsetItems.at(knownOffsetIndex);
+						duplicatesToUpdate.push_back(std::make_pair(&itemDataModifiable, knownOffsetItem));
+						continue;
+					}
+					knownOffsets.push_back(itemData.offset);
+					knownOffsetItems.push_back(&itemData);
+
+					if (previousData)
+					{
+						previousData->size = lastOffset;
+					}
+
+					previousData = &itemDataModifiable;
+				}
+			}
+
+			// set size of last item
+			if (previousData)
+			{
+				previousData->size = dataSize - lastOffset;
+			}
+
+			// update all duplicate size as well
+			for (auto& it : duplicatesToUpdate)
+			{
+				it.first->size = it.second->size;
+			}
+		}
+
 		// create the dictionary binary
 		T_Bytes dictBytes;
 
@@ -490,6 +558,9 @@ namespace Lime
 				
 				uint64_t seek_id = static_cast<uint64_t>(itemData.offset);
 				appendBytes(dictBytes, toBytes(toBigEndian(seek_id)));
+
+				uint64_t resourceSize = static_cast<uint64_t>(itemData.size);
+				appendBytes(dictBytes, toBytes(toBigEndian(resourceSize)));
 
 				if (options.chksum != ChkSumOption::NONE)
 				{
@@ -525,7 +596,8 @@ namespace Lime
 			throw std::runtime_error("Unable to compress dictionary.");
 		}
 
-		////T_Bytes dictBytesCompressed(dictBytesCompressedData, dictBytesCompressedData + dictBytesCompressedSize);
+		// we can now dispose of uncompressed dict bytes
+		dictBytes.clear();
 
 		// prepare bgn and end endpoints
 		const std::string* bgnEndpoint = nullptr;
@@ -550,8 +622,6 @@ namespace Lime
 		// prepare header data
 		const std::string* limeVersion = &LIME_VERSION;
 		const std::string* headString = &options.headstr;
-
-		uint64_t dataSize = static_cast<uint64_t>(fileSize(tmpDataFilename.c_str()));
 
 		// write to datafile
 
@@ -623,7 +693,7 @@ namespace Lime
 			}
 
 			// data size
-			T_Bytes dataSizeBytes = toBytes(toBigEndian(dataSize));
+			T_Bytes dataSizeBytes = toBytes(toBigEndian(static_cast<uint64_t>(dataSize)));
 			if (fwrite(dataSizeBytes.data(), 1u, dataSizeBytes.size(), dataFile) != dataSizeBytes.size())
 			{
 				goto error;

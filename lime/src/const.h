@@ -32,9 +32,18 @@
 
 #pragma once
 
+#include <string>
+
 namespace Lime
 {
-	const char* const LIME_VERSION = "0.2.0";
-	const char* const LIME_COPYRIGHT_YEAR = "2019";
-	const char* const LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
+	const std::string LIME_VERSION = "0.2.0";
+	const std::string LIME_COPYRIGHT_YEAR = "2019";
+	const std::string LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
+
+	const std::string LM_BGN_ADLER32 = "LM>";
+	const std::string LM_END_ADLER32 = "<LM";
+	const std::string LM_BGN_CRC32 = "LM]";
+	const std::string LM_END_CRC32 = "[LM";
+	const std::string LM_BGN_NOCHKSUM = "LM)";
+	const std::string LM_END_NOCHKSUM = "(LM";
 }

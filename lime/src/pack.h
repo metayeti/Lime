@@ -41,13 +41,6 @@
 
 namespace Lime
 {
-	const char* const LM_BGN_ADLER32 = "LM>";
-	const char* const LM_END_ADLER32 = "<LM";
-	const char* const LM_BGN_CRC32 = "LM]";
-	const char* const LM_END_CRC32 = "[LM";
-	const char* const LM_BGN_NOCHKSUM = "LM)";
-	const char* const LM_END_NOCHKSUM = "(LM";
-
 	enum class ChkSumOption : unsigned char
 	{
 		ADLER32, CRC32, NONE

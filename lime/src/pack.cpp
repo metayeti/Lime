@@ -346,6 +346,8 @@ namespace Lime
 
 					gzwrite(outFile, data.data(), static_cast<unsigned int>(data.size()));
 
+					totalRead += data.size();
+
 					switch (options.chksum)
 					{
 					case ChkSumOption::ADLER32:
@@ -456,7 +458,7 @@ namespace Lime
 
 				first = false;
 
-				inf << "\nChecksum for " << category << ", " << key << ": " << checksum << "\n";
+				///inf << "\nChecksum for " << category << ", " << key << ": " << checksum << "\n";
 			}
 		}
 
@@ -543,14 +545,14 @@ namespace Lime
 			uint32_t M_keys = static_cast<uint32_t>(collection.size());
 			appendBytes(dictBytes, toBytes(toBigEndian(M_keys)));
 
-			inf << "\n?? " << categoryKey;
+			///inf << "\n?? " << categoryKey;
 
 			for (auto const& it2 : collection)
 			{
 				auto const& collectionKey = it2.first;
 				auto const& itemData = it2.second;
 
-				inf << "\n   -> " << collectionKey << "\n";
+				///inf << "\n   -> " << collectionKey << "\n";
 
 				uint8_t collectionKeySize = static_cast<uint8_t>(collectionKey.size());
 				appendBytes(dictBytes, toBytes(toBigEndian(collectionKeySize)));
@@ -582,7 +584,7 @@ namespace Lime
 				break;
 		}
 
-		inf << "\nDict checksum: " << dictChecksum << "\n\n";
+		///inf << "\nDict checksum: " << dictChecksum << "\n\n";
 
 		// compress dictionary binary
 
@@ -771,11 +773,16 @@ namespace Lime
 		delete[] dictBytesCompressedData;
 		std::remove(tmpDataFilename.c_str());
 
-		// writing successful
+		// writing successful, print out some statistics
+
+		size_t totalDataSize = fileSize(outputFilename.c_str());
+		const float compressionRatio = (1.f - totalDataSize * 1.f / totalRead) * 100.f;
+		char compressionRatioStr[8];
+		sprintf_s(compressionRatioStr, "%4.2f", compressionRatio);
 
 		inf.ok("done")
 			<< "\n\nWriting successful.\n\n"
-			<< "Read 0 bytes, wrote 0 bytes.\n"
-			<< "Compression ratio: 0%\n";
+			<< "Read " << totalRead << " bytes, wrote " << totalDataSize << " bytes.\n"
+			<< "Compression ratio: " << compressionRatioStr << "%\n";
 	}
 }

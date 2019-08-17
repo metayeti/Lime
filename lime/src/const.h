@@ -32,6 +32,9 @@
 
 #pragma once
 
+#ifndef LIME_CONST_H_
+#define LIME_CONST_H_
+
 #include <string>
 
 namespace Lime
@@ -47,3 +50,5 @@ namespace Lime
 	const std::string LM_BGN_NOCHKSUM = "LM)";
 	const std::string LM_END_NOCHKSUM = "(LM";
 }
+
+#endif // LIME_CONST_H_

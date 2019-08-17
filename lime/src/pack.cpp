@@ -105,12 +105,6 @@ namespace Lime
 	{
 		T_Bytes bytes;
 		bytes.reserve(sizeof(T));
-		/*
-		for (size_t i = sizeof(T); i-- > 0; )
-		{
-			bytes.push_back(static_cast<Bytef>(value >> (i * 8)));
-		}
-		*/
 		for (size_t i = 0; i < sizeof(T); ++i)
 		{
 			bytes.push_back(static_cast<Bytef>(value >> (i * 8)));
@@ -152,7 +146,6 @@ namespace Lime
 			auto const& collection = it.second;
 			for (auto const& it2 : collection)
 			{
-				auto const& key = it2.first;
 				auto const& filename = it2.second;
 #if defined(_WIN32)
 				auto pFilename = it2.second;
@@ -295,11 +288,7 @@ namespace Lime
 			size_t size = 0;
 		};
 
-		//std::unordered_map<std::string, std::unordered_map<std::string, DictItemData>> dictDataMap;
-
-		//using T_DictData = std::unordered_map<std::string, std::unordered_map<std::string, DictItemData>>; // random order dict
-		using T_DictData = DMap<DMap<DictItemData>>; // in-order dict
-		T_DictData dictDataMap;
+		DMap<DMap<DictItemData>> dictDataMap;
 
 		std::unordered_map<std::string, size_t> filenameOffsetMap; // used for detecting duplicates
 
@@ -331,7 +320,7 @@ namespace Lime
 
 				auto const& value = it2->second;
 
-				uint32_t checksum = 0;
+				uint32_t checksum;
 
 				if (isMeta)
 				{
@@ -350,12 +339,12 @@ namespace Lime
 
 					switch (options.chksum)
 					{
-					case ChkSumOption::ADLER32:
-						checksum = adler32(0ul, reinterpret_cast<const Bytef*>(data.c_str()), static_cast<unsigned int>(data.size()));
-						break;
-					case ChkSumOption::CRC32:
-						checksum = crc32(0ul, reinterpret_cast<const Bytef*>(data.c_str()), static_cast<unsigned int>(data.size()));
-						break;
+						case ChkSumOption::ADLER32:
+							checksum = adler32(0ul, reinterpret_cast<const Bytef*>(data.c_str()), static_cast<unsigned int>(data.size()));
+							break;
+						case ChkSumOption::CRC32:
+							checksum = crc32(0ul, reinterpret_cast<const Bytef*>(data.c_str()), static_cast<unsigned int>(data.size()));
+							break;
 					}
 
 					// store offset, size and checksum
@@ -408,22 +397,24 @@ namespace Lime
 					{
 						switch (options.chksum)
 						{
-						case ChkSumOption::ADLER32:
-							checksum = adler32(0ul, Z_NULL, 0u);
-							break;
-						case ChkSumOption::CRC32:
-							checksum = crc32(0ul, Z_NULL, 0u);
-							break;
+							case ChkSumOption::ADLER32:
+								checksum = adler32(0ul, Z_NULL, 0u);
+								break;
+							case ChkSumOption::CRC32:
+								checksum = crc32(0ul, Z_NULL, 0u);
+								break;
 						}
 
 						Bytef* buffer = new Bytef[16348];
 						size_t numRead = 0;
+						size_t numReadTotal = 0;
 #if defined(_WIN32)
 						while ((numRead = fread_s(buffer, 16348u, 1, sizeof(buffer), resFile)) > 0)
 #else
 						while ((numRead = fread(buffer, 1, 16348u, resFile)) > 0)
 #endif
 						{
+							numReadTotal += numRead;
 							totalRead += numRead;
 							if (gzwrite(outFile, buffer, static_cast<unsigned int>(numRead)) != static_cast<int>(numRead))
 							{
@@ -446,6 +437,17 @@ namespace Lime
 						dictDataMap[category][key].checksum = checksum;
 						delete[] buffer;
 						fclose(resFile);
+
+						totalRead += numReadTotal;
+
+						if (resFileSize != numReadTotal)
+						{
+							// read and written sizes don't match - something isn't right
+							// abort packing
+							gzclose(outFile);
+							std::remove(tmpDataFilename.c_str());
+							throw std::runtime_error("Unable to process file: " + resFilename);
+						}
 					}
 					else
 					{
@@ -457,8 +459,6 @@ namespace Lime
 				}
 
 				first = false;
-
-				///inf << "\nChecksum for " << category << ", " << key << ": " << checksum << "\n";
 			}
 		}
 
@@ -545,14 +545,10 @@ namespace Lime
 			uint32_t M_keys = static_cast<uint32_t>(collection.size());
 			appendBytes(dictBytes, toBytes(toBigEndian(M_keys)));
 
-			///inf << "\n?? " << categoryKey;
-
 			for (auto const& it2 : collection)
 			{
 				auto const& collectionKey = it2.first;
 				auto const& itemData = it2.second;
-
-				///inf << "\n   -> " << collectionKey << "\n";
 
 				uint8_t collectionKeySize = static_cast<uint8_t>(collectionKey.size());
 				appendBytes(dictBytes, toBytes(toBigEndian(collectionKeySize)));
@@ -583,8 +579,6 @@ namespace Lime
 				dictChecksum = crc32(0ul, dictBytes.data(), static_cast<unsigned int>(dictBytes.size()));
 				break;
 		}
-
-		///inf << "\nDict checksum: " << dictChecksum << "\n\n";
 
 		// compress dictionary binary
 
@@ -777,8 +771,12 @@ namespace Lime
 
 		size_t totalDataSize = fileSize(outputFilename.c_str());
 		const float compressionRatio = (1.f - totalDataSize * 1.f / totalRead) * 100.f;
-		char compressionRatioStr[8];
+		char compressionRatioStr[16];
+#if defined(_WIN32)
 		sprintf_s(compressionRatioStr, "%4.2f", compressionRatio);
+#else
+		sprintf(compressionRatioStr, "%4.2f", compressionRatio);
+#endif
 
 		inf.ok("done")
 			<< "\n\nWriting successful.\n\n"

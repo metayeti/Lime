@@ -32,6 +32,9 @@
 
 #pragma once
 
+#ifndef LIME_INIPARSE_H_
+#define LIME_INIPARSE_H_
+
 #include <string>
 
 namespace Lime
@@ -61,3 +64,5 @@ namespace Lime
 		PData parseLine(std::string line);
 	};
 }
+
+#endif // LIME_INIPARSE_H_

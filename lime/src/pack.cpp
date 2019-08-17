@@ -255,7 +255,7 @@ namespace Lime
 		   length   string
 		 |________|________|
 
-		Strings use 8-bit unsigned integers to store length.
+		String lengths are stored as 8-bit unsigned integers.
 		Numeric values are stored as 32-bit unsigned integers.
 		Numeric values marked + are stored as 64-bit unsigned integers.
 
@@ -415,7 +415,6 @@ namespace Lime
 #endif
 						{
 							numReadTotal += numRead;
-							totalRead += numRead;
 							if (gzwrite(outFile, buffer, static_cast<unsigned int>(numRead)) != static_cast<int>(numRead))
 							{
 								// abort packing

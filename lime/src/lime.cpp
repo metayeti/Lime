@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
 					<< "All non-resource strings* are stored in the following manner:\n\n"
 					<< "   length   string\n"
 					<< " |________|________|\n\n"
-					<< "Strings use 8-bit unsigned integers to store length.\n"
+					<< "String lengths are stored as 8-bit unsigned integers.\n"
 					<< "Numeric values are stored as 32-bit unsigned integers.\n"
 					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n";
 			}

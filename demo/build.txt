@@ -1,0 +1,17 @@
+To build the Demo project:
+
+## Linux:
+
+  Make sure you have zlib and SFML development libraries installed for your environment.
+
+  Navigate to /demo/ and type `make`.
+
+  Release binary should appear in /demo/bin/.
+
+## Windows:
+
+  Navigate to \windows\vs16 and use Visual Studio 16 to open the solution file.
+  Select the configuration you want to use (for example Release / x64) and build
+  the Demo project.
+
+  Binary should appear in \demo\bin\[x86|x64]\[Debug|Release].

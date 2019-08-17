@@ -21,55 +21,40 @@
  */
 
  /*
-  *  Unlime
+  *  LimePack Demo 
   *
-  *  unlime.h
-  *  Class for Lime datafile extraction.
-  *
+  *  demo.h
+  *  Demo application class.
+  * 
   */
 
 #pragma once
 
-#ifndef LIME_UNLIME_H_
-#define LIME_UNLIME_H_
+#ifndef LIME_DEMO_H_
+#define LIME_DEMO_H
 
-#include <string>
-#include <unordered_map>
-#include <zlib.h>
+#include <stdexcept>
+#include <SFML/Graphics.hpp>
+#include "unlime.h"
 
-class Unlime
+class Demo
 {
 private:
-	struct DictItem
-	{
-		uint64_t seek_id;
-		uint64_t size;
-		uint32_t checksum;
-	};
+	static const unsigned int window_width = 640;
+	static const unsigned int window_height = 480;
 
-	using T_DictCategory = std::unordered_map<std::string, int>;
-	using T_DictMap = std::unordered_map<std::string, T_DictCategory>;
+	sf::RenderWindow* window = nullptr;
+	void CreateApplicationWindow();
 
-	T_DictMap dictMap;
+	Unlime unlime;
+	static void LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data);
+
+	sf::Texture sprite1;
 
 public:
-	using T_Bytes = std::vector<Bytef>;
-
-	struct Options
-	{
-		bool integrityCheck = true;
-		bool checkHeadString = true;
-		std::string headString;
-	} options;
-
-	void readDict()
-	{
-	}
-
-	T_Bytes get(std::string const& category, std::string const& key)
-	{
-		return T_Bytes();
-	}
+	void Init();
+	void Run();
+	void Unload();
 };
 
-#endif // LIME_UNLIME_H_
+#endif // LIME_DEMO_H

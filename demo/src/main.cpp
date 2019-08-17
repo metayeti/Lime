@@ -21,55 +21,43 @@
  */
 
  /*
-  *  Unlime
+  *  LimePack Demo
   *
-  *  unlime.h
-  *  Class for Lime datafile extraction.
+  *  main.cpp
+  *  Program entry point.
   *
   */
 
-#pragma once
+//#include <SFML/Graphics.hpp>
+#if defined(_WIN32)
+	#include <Windows.h>
+#else
+	#include <iostream>
+#endif
+#include <exception>
+#include "demo.h"
 
-#ifndef LIME_UNLIME_H_
-#define LIME_UNLIME_H_
-
-#include <string>
-#include <unordered_map>
-#include <zlib.h>
-
-class Unlime
+#if defined(_WIN32)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR, lpCmdLine, int nCmdShow)
+#else
+int main(int argc, char* args[])
+#endif
 {
-private:
-	struct DictItem
-	{
-		uint64_t seek_id;
-		uint64_t size;
-		uint32_t checksum;
-	};
-
-	using T_DictCategory = std::unordered_map<std::string, int>;
-	using T_DictMap = std::unordered_map<std::string, T_DictCategory>;
-
-	T_DictMap dictMap;
-
-public:
-	using T_Bytes = std::vector<Bytef>;
-
-	struct Options
-	{
-		bool integrityCheck = true;
-		bool checkHeadString = true;
-		std::string headString;
-	} options;
-
-	void readDict()
-	{
+	Demo demo;
+	try {
+		demo.Init();
+		demo.Run();
 	}
-
-	T_Bytes get(std::string const& category, std::string const& key)
-	{
-		return T_Bytes();
+	catch (std::exception& e) {
+		std::cout << e.what();
 	}
-};
+	demo.Unload();
 
-#endif // LIME_UNLIME_H_
+/*
+    sf::Window window(sf::VideoMode(640, 480), "Hello world!");
+
+    sf::sleep(sf::seconds(10));
+
+  return 0;
+  */
+}

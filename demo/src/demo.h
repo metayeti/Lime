@@ -33,16 +33,22 @@
 #ifndef LIME_DEMO_H_
 #define LIME_DEMO_H
 
+#include <SFML/Graphics.hpp>
+#include <string>
 #include <stdexcept>
 #include <memory>
-#include <SFML/Graphics.hpp>
 #include "unlime.h"
 
 class Demo
 {
 private:
-	static const unsigned int window_width = 640;
-	static const unsigned int window_height = 480;
+	const unsigned int window_width = 640;
+	const unsigned int window_height = 480;
+#if defined(_WIN32)
+	const std::string datafileFilename = "../../../datafile/demo.dat";
+#else
+	const std::string datafileFilename = "../datafile/demo.dat";
+#endif
 
 	sf::RenderWindow* window = nullptr;
 

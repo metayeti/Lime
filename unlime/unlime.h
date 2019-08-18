@@ -152,10 +152,12 @@ public:
 			}
 		}
 
+		/*
 		Extractor(Extractor const& other)
 		: unlime(other.unlime)
 		{
 		}
+		*/
 
 		const Extractor operator=(Extractor const& other)
 		{
@@ -174,6 +176,7 @@ public:
 			}
 		}
 
+		/*
 		Extractor(Extractor&& other)
 		{
 			unlime = other.unlime;
@@ -189,6 +192,7 @@ public:
 			}
 			return *this;
 		}
+		*/
 
 		Unlime::T_Bytes get(std::string const& category, std::string const& key) const
 		{

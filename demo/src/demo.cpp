@@ -68,7 +68,7 @@ void Demo::Init()
 	// Create the unlime object on our demo datafile.
 	// The datafile is not open yet, we are only setting up the object and
 	// associating it with the filename.
-	unlime = std::make_unique<Unlime>("../datafile/demo.dat");
+	unlime = std::make_unique<Unlime>(datafileFilename);
 
 	// Before we start extracting, we may want to set some options.
 	// This is an optional step, it is only required if you wish to perform datafile

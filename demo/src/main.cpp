@@ -29,16 +29,16 @@
   */
 
 //#include <SFML/Graphics.hpp>
-#if defined(_WIN32)
-	#include <Windows.h>
-#else
-	#include <iostream>
-#endif
-#include <exception>
 #include "demo.h"
+#include <exception>
+#if defined(_WIN32)
+#include <Windows.h>
+#else
+#include <iostream>
+#endif
 
 #if defined(_WIN32)
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR, lpCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hpInstance, LPSTR nCmdLine, int nCmdShow)
 #else
 int main(int argc, char* args[])
 #endif
@@ -49,11 +49,16 @@ int main(int argc, char* args[])
 		demo.Run();
 	}
 	catch (std::exception& e) {
+#if defined(_WIN32)
+		MessageBoxA(NULL, e.what(), "LimePack Demo", MB_ICONERROR | MB_OK);
+#else
 		std::cout
 			<< std::endl
 			<< e.what()
 			<< std::endl
 			<< std::endl;
+#endif
 	}
 	demo.Unload();
+	return 0;
 }

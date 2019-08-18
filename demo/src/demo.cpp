@@ -76,7 +76,7 @@ void Demo::Init()
 
 	// integrityCheck performs the checksum test when reading data. An exception will
 	// be thrown in case data corruption is detected.
-	// Set to false to skip (skips automatically for datafiles packed with -chksum=none).
+	// Set false to skip (skips automatically for datafiles packed with -chksum=none).
 	// Default is true.
 	unlime->options.integrityCheck = true;
 

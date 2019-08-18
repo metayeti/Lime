@@ -37,16 +37,42 @@
 #include <vector>
 #include <unordered_map>
 #include <stdexcept>
-#include <cstdio>
+///#include <cstdio>
+#include <fstream>
+#include <cstdint>
+#include <sys/stat.h>
 #include <zlib.h>
 
 class Unlime
 {
-	/*
 public:
-	class Extractor;
-*/
+	using T_Bytes = std::vector<Bytef>;
+
 private:
+	const std::string LIME_VERSION = "0.9.0";
+
+	const std::string LM_BGN_ADLER32 = "LM>";
+	const std::string LM_END_ADLER32 = "<LM";
+	const std::string LM_BGN_CRC32 = "LM]";
+	const std::string LM_END_CRC32 = "[LM";
+	const std::string LM_BGN_NOCHKSUM = "LM)";
+	const std::string LM_END_NOCHKSUM = "(LM";
+
+	const int LM_ENDPOINT_LENGTH = 3;
+
+	const std::string ERROR_UNKNOWN_ERROR = "Unknown error!";
+	const std::string ERROR_UNKNOWN_FORMAT = "Unknown file format!";
+	const std::string ERROR_VERSION_MISMATCH = "Datafile version mismatch!";
+	const std::string ERROR_UNKNOWN_DATAFILE = "Unknown datafile!";
+	const std::string ERROR_CORRUPTED_FILE = "Corrupted datafile format.";
+
+	enum class DatafileChecksumFunc : unsigned char
+	{
+		ADLER32, CRC32, NONE
+	};
+
+	const uint64_t minimumDatafileSize = 10;
+
 	struct T_DictItem
 	{
 		uint64_t seek_id;
@@ -56,80 +82,197 @@ private:
 	using T_DictCategory = std::unordered_map<std::string, T_DictItem>;
 	using T_DictMap = std::unordered_map<std::string, T_DictCategory>;
 
-/*
-	using T_ExtractorList = std::vector<Extractor*>;
-	T_ExtractorList extractorList;*/
-
-	const std::string dataFilename;
+	const std::string datafileFilename;
 
 	T_DictMap dictMap;
 	bool dictWasRead = false;
 
-	FILE* dataFileHandle = nullptr;
-	bool dataFileOpen = false;
+	uint64_t totalDatafileSize = 0;
+
+	DatafileChecksumFunc chksumFunc = DatafileChecksumFunc::ADLER32;
+
+	uint32_t dictSize = 0;
+	uint32_t dictOffset = 0;
+	uint32_t dictChecksum = 0;
+
+	uint64_t dataSize = 0;
+	uint64_t dataOffset = 0;
+
+	bool wasValidated = false;
+
+	std::ifstream datafileStream;
 
 	size_t n_extractors = 0;
 
+	bool fileExists(const char* filename)
+	{
+		struct stat buff;
+		return !stat(filename, &buff);
+	}
+
+	size_t fileSize(const char* filename)
+	{
+		struct stat buff;
+		stat(filename, &buff);
+		return buff.st_size;
+	}
+
 	void openDatafile()
 	{
-		if (dataFileOpen)
+		if (datafileStream.is_open())
 		{
 			return;
 		}
-#if defined(_WIN32)
-		if (fopen_s(&dataFileHandle, dataFilename.c_str(), "rb") != 0)
-#else
-		if ((dataFileHandle = fopen(dataFilename.c_str(), "rb")) == nullptr)
-#endif
+		if (!fileExists(datafileFilename.c_str()))
 		{
-			throw std::runtime_error("Unable to open file: " + dataFilename);
+			throw std::runtime_error("Unable to find file: " + datafileFilename);
 		}
-		dataFileOpen = true;
+		datafileStream.open(datafileFilename, std::ios::in | std::ifstream::binary);
+		if (!datafileStream.is_open())
+		{
+			throw std::runtime_error("Unable to open file: " + datafileFilename);
+		}
 	}
 
 	void closeDatafile()
 	{
-		if (dataFileOpen)
+		if (datafileStream.is_open())
 		{
-			fclose(dataFileHandle);
-			dataFileHandle = nullptr;
-			dataFileOpen = false;
+			datafileStream.close();
 		}
 	}
 
-/*
-	void destroyExtractors()
+	template<class T>
+	void readValue(T& value)
 	{
-		for (Extractor* ex : extractorList)
+		value = 0;
+		size_t n_bytes = sizeof(T);
+		for (size_t i = 0; i < n_bytes; ++i)
 		{
-			delete ex;
+			Bytef buffer;
+			datafileStream.read((char*)&buffer, 1);
+			value = (value << 8) + buffer;
 		}
-		extractorList.clear();
 	}
-	*/
+
+	template<class T>
+	void readBytes(T& buffer, size_t size)
+	{
+		buffer.resize(size);
+		datafileStream.read((char*)&buffer[0], size);
+	}
+
+	void validateFormat()
+	{
+		if (!datafileStream.is_open())
+		{
+			throw std::runtime_error(ERROR_UNKNOWN_ERROR);
+		}
+
+		// filesize sanity check
+		totalDatafileSize = fileSize(datafileFilename.c_str());
+		if (totalDatafileSize < minimumDatafileSize)
+		{
+			throw std::runtime_error(ERROR_UNKNOWN_FORMAT);
+		}
+
+		// retreive bgn and end endpoints
+		datafileStream.seekg(0);
+		std::string bgnEndpointStr;
+		readBytes(bgnEndpointStr, LM_ENDPOINT_LENGTH);
+
+		datafileStream.seekg(-LM_ENDPOINT_LENGTH, datafileStream.end);
+		std::string endEndpointStr;
+		readBytes(endEndpointStr, LM_ENDPOINT_LENGTH);
+
+		// validate endpoints and extract checksum function used
+		if (bgnEndpointStr == LM_BGN_ADLER32 && endEndpointStr == LM_END_ADLER32)
+		{
+			chksumFunc = DatafileChecksumFunc::ADLER32;
+		}
+		else if (bgnEndpointStr == LM_BGN_CRC32 && endEndpointStr == LM_END_CRC32)
+		{
+			chksumFunc = DatafileChecksumFunc::CRC32;
+		}
+		else if (bgnEndpointStr == LM_BGN_NOCHKSUM && endEndpointStr == LM_END_NOCHKSUM)
+		{
+			chksumFunc = DatafileChecksumFunc::NONE;
+		}
+		else
+		{
+			throw std::runtime_error(ERROR_UNKNOWN_FORMAT);
+		}
+
+		// retreive version string
+		datafileStream.seekg(LM_ENDPOINT_LENGTH);
+		uint8_t versionStrLength = 0;
+		readValue(versionStrLength);
+
+		std::string versionStr;
+		readBytes(versionStr, versionStrLength);
+
+		if (versionStr != LIME_VERSION)
+		{
+			// for now we assume that any version other than current version is unreadable
+			// future versions may allow backwards compatibility through datafile versioning
+			// in case the format changes
+			throw std::runtime_error(ERROR_VERSION_MISMATCH);
+		}
+
+		uint8_t headStrLength = 0;
+		readValue(headStrLength);
+
+		if (options.checkHeadString)
+		{
+			std::string headStr;
+			readBytes(headStr, headStrLength);
+
+			if (headStr != options.headString)
+			{
+				throw std::runtime_error(ERROR_UNKNOWN_DATAFILE);
+			}
+		}
+		else if (headStrLength > 0)
+		{
+			datafileStream.seekg(headStrLength, datafileStream.cur);
+		}
+
+		// extract header data
+		readValue(dictSize);
+		if (chksumFunc != DatafileChecksumFunc::NONE)
+		{
+			readValue(dictChecksum);
+		}
+		readValue(dataSize);
+
+		// calculate offsets
+		dictOffset = static_cast<uint32_t>(datafileStream.tellg());
+		dataOffset = static_cast<uint64_t>(dictSize) + static_cast<uint64_t>(dictOffset);
+
+		// validation done
+		wasValidated = true;
+	}
 
 	void readDict()
 	{
-		if (dictWasRead)
+		if (!datafileStream.is_open() || !wasValidated)
 		{
-			return;
+			throw std::runtime_error(ERROR_UNKNOWN_ERROR);
 		}
 
-/*
-#if defined(_WIN32)
-				while ((numRead = fread_s(buffer, 16348u, 1, sizeof(buffer), cDataFile)) > 0)
-#else
-				while ((numRead = fread(buffer, 1, 16348u, cDataFile)) > 0)
-#endif
-*/
+		/*
+		datafileStream.seekg(dictOffset);
+		T_Bytes dictBytesCompressed;
+		readBytes(dictBytesCompressed, dictSize);
 
-	//	fclose(dataFileHandle);
-	//	dataFileHandle = nullptr;
+		T_Bytes dictBytesDecompressed;
+		uLongf destLen = 100000u;
+		dictBytesDecompressed.resize(destLen);
+		uncompress(&dictBytesDecompressed[0], &destLen, dictBytesCompressed.data(), dictBytesCompressed.size());
+		*/
 	}
 
 public:
-	using T_Bytes = std::vector<Bytef>;
-
 	struct Options
 	{
 		bool integrityCheck = true;
@@ -143,12 +286,12 @@ public:
 		Unlime* unlime = nullptr;
 
 	public:
-		Extractor(Unlime& unlime)
-		: unlime(&unlime)
+		Extractor(Unlime& context)
+		: unlime(&context)
 		{
-			if (this->unlime->n_extractors++ == 0)
+			if (unlime->n_extractors++ == 0)
 			{
-				this->unlime->openDatafile();
+				unlime->openDatafile();
 			}
 		}
 
@@ -159,6 +302,7 @@ public:
 		}
 		*/
 
+		/*
 		const Extractor operator=(Extractor const& other)
 		{
 			if (this != &other)
@@ -166,7 +310,7 @@ public:
 				unlime = other.unlime;
 			}
 			return *this;
-		}
+		}*/
 
 		~Extractor()
 		{
@@ -196,6 +340,10 @@ public:
 
 		Unlime::T_Bytes get(std::string const& category, std::string const& key) const
 		{
+			if (!unlime->wasValidated)
+			{
+				unlime->validateFormat();
+			}
 			if (!unlime->dictWasRead)
 			{
 				unlime->readDict();
@@ -205,7 +353,7 @@ public:
 	};
 
 	Unlime(std::string const& filename)
-	: dataFilename(filename)
+	: datafileFilename(filename)
 	{
 	}
 };

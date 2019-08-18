@@ -26,5 +26,8 @@
     <ClInclude Include="..\..\..\demo\src\demo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\unlime\unlime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

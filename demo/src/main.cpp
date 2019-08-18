@@ -38,7 +38,7 @@
 #endif
 
 #if defined(_WIN32)
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hpInstance, LPSTR nCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR nCmdLine, int nCmdShow)
 #else
 int main(int argc, char* args[])
 #endif

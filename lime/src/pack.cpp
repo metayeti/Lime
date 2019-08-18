@@ -778,8 +778,7 @@ namespace Lime
 #endif
 
 		inf.ok("done")
-			<< "\n\nWriting successful.\n\n"
-			<< "Read " << totalRead << " bytes, wrote " << totalDataSize << " bytes.\n"
+			<< "\n\nRead " << totalRead << " bytes, wrote " << totalDataSize << " bytes.\n"
 			<< "Compression ratio: " << compressionRatioStr << "%\n";
 	}
 }

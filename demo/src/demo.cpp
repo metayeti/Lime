@@ -28,7 +28,7 @@
   * 
   */
 
- #include "demo.h"
+#include "demo.h"
 
 void Demo::CreateApplicationWindow()
 {
@@ -38,11 +38,10 @@ void Demo::CreateApplicationWindow()
 	}
 	window = new sf::RenderWindow(sf::VideoMode(window_width, window_height), "LimePack Demo", sf::Style::Close);
 	window->setFramerateLimit(60u);
-	sf::VideoMode videoMode = sf::VideoMode::getDesktopMode();
-	window->setPosition({
-		static_cast<int>((videoMode.width - window_width) / 2),
-		static_cast<int>((videoMode.height - window_height) / 2)
-	});
+	const sf::VideoMode videoMode = sf::VideoMode::getDesktopMode();
+	const int window_x = (videoMode.width - window_width) / 2;
+	const int window_y = (videoMode.height - window_height) / 2;
+	window->setPosition({ window_x, window_y });
 }
 
 void Demo::LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data)
@@ -50,42 +49,60 @@ void Demo::LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data)
 	texture.loadFromMemory(data.data(), data.size());	
 }
 
+void Demo::ExtractData()
+{
+	// To extract data, first we create an Extractor object.
+	// This opens the datafile.
+	Unlime::Extractor ex(*unlime);
+
+	// Now we can seamlessly extract any data we require with ex.get().
+	// Here we acquire some data for our textures.
+	LoadTexture(texSprite1, ex.get("graphics", "sprite1"));
+	LoadTexture(texSprite2, ex.get("graphics", "sprite2"));
+
+	// The datafile is closed when ex goes out of scope.
+}
+
 void Demo::Init()
 {
-	// setup unlime
+	// Create the unlime object on our demo datafile.
+	// The datafile is not open yet, we are only setting up the object and
+	// associating it with the filename.
+	unlime = std::make_unique<Unlime>("../datafile/demo.dat");
 
-	// there is a number of options we can set before we begin unliming data
+	// Before we start extracting, we may want to set some options.
+	// This is an optional step, it is only required if you wish to perform datafile
+	// identification via the head string or if you wish to skip integrity checking.
 
-	// integrityCheck performs the checksum test
-	// set to false to skip (skips automatically for datafiles packed with -chksum=none)
-	// default is true
-	unlime.options.integrityCheck = true;
+	// integrityCheck performs the checksum test when reading data. An exception will
+	// be thrown in case data corruption is detected.
+	// Set to false to skip (skips automatically for datafiles packed with -chksum=none).
+	// Default is true.
+	unlime->options.integrityCheck = true;
 
-	// checkHeadString makes unlime throw an exception if options.headString does not match
-	// the head string in the datafile
-	// default is false
-	unlime.options.checkHeadString = true;
+	// checkHeadString makes unlime throw an exception if options.headString does not match.
+	// The head string defined in the datafile.
+	// Default is false.
+	unlime->options.checkHeadString = true;
 
-	// headString sets the string to be compared against when checkHeadString is set to true
-	// default is empty string
-	unlime.options.headString = "Lime Demo";
+	// headString sets the string to be compared against when checkHeadString is set to true.
+	// This only comes into effect on the very first get() call, when the datafile format is
+	// being verified and the dictionary is extracted.
+	// Default is an empty string.
+	unlime->options.headString = "Lime Demo";
 
-	// we call readDict here to extract the dictionary from the datafile
-	// this is not strictly necessary - if ommitted, the dictionary will be read on the first call to get()
-	// throws an runtime_error if datafile can't be read
-	unlime.readDict();
+	// We can now proceed to extract data from the datafile.
+	ExtractData();
 
-	// create the demo window
+	// Create the demo window
 	CreateApplicationWindow();
-
-	//LoadTexture(sprite1, unlime.get("a", "B"));
 }
 
 void Demo::Run()
 {
 	while (window->isOpen())
 	{
-		// process events
+		// Process events
 		sf::Event e;
 		while (window->pollEvent(e))
 		{
@@ -95,7 +112,7 @@ void Demo::Run()
 				break;
 			}
 		}
-		// draw to screen
+		// Draw to screen
 		window->display();
 	}
 }

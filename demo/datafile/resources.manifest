@@ -1,9 +1,9 @@
-; LimePack Demo resources
+; LimePack Demo
 
 ; A basic resource manifest for the demo project.
 ; The resource manifest has the structure of an INI file.
 
-; Sections that start with the @ character indicate metadata.
+; Categories that start with the @ character indicate metadata.
 ; These values will be stored in the datafile as plain text.
 
 ; Categories and keys are stripped of leading and trailing
@@ -14,14 +14,15 @@ name = Demo datafile
 version = 1.0
 important info = I like giraffes!
 
-; A (non-meta) section contains a group of keys whish point
-; to filenames. Filenames are lost in the process.
+; A (non-meta) section contains a group of keys which point
+; to resource files. Filenames are lost in packing.
 
 ; Names of categories and keys are up to you to decide and are
 ; used for asset retreival within the game.
 
 ; graphics files
+
 [graphics]
 sprite1 = resources/sprite1.png
-;sprite2 = resources/sprite2.png
+sprite2 = resources/sprite2.png
 ;sprite3 = resources/sprite3.png

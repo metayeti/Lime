@@ -49,15 +49,11 @@ int main(int argc, char* args[])
 		demo.Run();
 	}
 	catch (std::exception& e) {
-		std::cout << e.what();
+		std::cout
+			<< std::endl
+			<< e.what()
+			<< std::endl
+			<< std::endl;
 	}
 	demo.Unload();
-
-/*
-    sf::Window window(sf::VideoMode(640, 480), "Hello world!");
-
-    sf::sleep(sf::seconds(10));
-
-  return 0;
-  */
 }

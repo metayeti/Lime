@@ -34,6 +34,7 @@
 #define LIME_DEMO_H
 
 #include <stdexcept>
+#include <memory>
 #include <SFML/Graphics.hpp>
 #include "unlime.h"
 
@@ -44,12 +45,17 @@ private:
 	static const unsigned int window_height = 480;
 
 	sf::RenderWindow* window = nullptr;
+
+	std::unique_ptr<Unlime> unlime;
+
+	sf::Texture texSprite1;
+	sf::Texture texSprite2;
+
 	void CreateApplicationWindow();
 
-	Unlime unlime;
 	static void LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data);
 
-	sf::Texture sprite1;
+	void ExtractData();
 
 public:
 	void Init();

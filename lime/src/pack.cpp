@@ -247,8 +247,8 @@ namespace Lime
 
 		Header:
 
-		   bgn   version*  head*  dict size   dict checksum   resources size+
-		 |_____|_________|______|___________|...............|________________|
+		   bgn   version*  head*  dict size   dict checksum
+		 |_____|_________|______|___________|...............|
 
 		All non-resource strings* are stored in the following manner:
 
@@ -295,15 +295,16 @@ namespace Lime
 		// first pack a temporary user data file
 		std::string tmpDataFilename = "~" + outputFilename;
 
-		std::string outFileMode = std::string("wb" + std::to_string(options.clevel));
-		gzFile outFile = gzopen(tmpDataFilename.c_str(), outFileMode.c_str());
+		FILE* outFile;
 
-		if (!outFile)
+#if defined(_WIN32)
+		if (fopen_s(&outFile, tmpDataFilename.c_str(), "wb") != 0)
+#else
+		if ((outFile = fopen(tmpDataFilename.c_str(), "wb")) == nullptr)
+#endif
 		{
 			throw std::runtime_error("Unable to open temporary file: " + tmpDataFilename);
 		}
-
-		bool first = true;
 
 		for (auto it = dict.begin(); it != dict.end(); ++it)
 		{
@@ -327,13 +328,22 @@ namespace Lime
 					// meta category, store value directly
 					auto const& data = value;
 
-					// flush previous stream
-					if (!first)
+					uLong dataBytesCompressedSize = compressBound(static_cast<uLong>(data.size()));
+					Bytef* dataBytesCompressedData = new Bytef[dataBytesCompressedSize];
+					if (compress2(dataBytesCompressedData, &dataBytesCompressedSize, (const Bytef*)data.data(), static_cast<uLong>(data.size()), options.clevel) != Z_OK)
 					{
-						gzflush(outFile, Z_FINISH);
+						// abort packing
+						fclose(outFile);
+						std::remove(tmpDataFilename.c_str());
+						throw std::runtime_error("Unable to compress data.");
 					}
 
-					gzwrite(outFile, data.data(), static_cast<unsigned int>(data.size()));
+					if (fwrite(dataBytesCompressedData, 1u, dataBytesCompressedSize, outFile) != dataBytesCompressedSize)
+					{
+						fclose(outFile);
+						std::remove(tmpDataFilename.c_str());
+						throw std::runtime_error("Unable to write to file: " + tmpDataFilename);
+					}
 
 					totalRead += data.size();
 
@@ -347,8 +357,9 @@ namespace Lime
 							break;
 					}
 
-					// store offset, size and checksum
-					const size_t offset = static_cast<size_t>(gzoffset(outFile));
+					// store offset and checksum
+					///const size_t offset = static_cast<size_t>(gzoffset(outFile));
+					const size_t offset = ftell(outFile);
 					dictDataMap[category][key] = { offset, checksum };
 				}
 				else
@@ -368,14 +379,8 @@ namespace Lime
 						continue;
 					}
 
-					// flush previous stream
-					if (!first)
-					{
-						gzflush(outFile, Z_FINISH);
-					}
-
 					// store current offset
-					const size_t offset = static_cast<size_t>(gzoffset(outFile));
+					const size_t offset = ftell(outFile);
 					dictDataMap[category][key] = { filenameOffsetMap[resFilename] = offset };
 
 					// pack data from file
@@ -388,7 +393,7 @@ namespace Lime
 #endif
 					{
 						// abort packing
-						gzclose(outFile);
+						fclose(outFile);
 						std::remove(tmpDataFilename.c_str());
 						throw std::runtime_error("Unable to open file: " + resFilename);
 					}
@@ -405,37 +410,93 @@ namespace Lime
 								break;
 						}
 
-						Bytef* buffer = new Bytef[16348];
+						z_stream cmpStream;
+
+						cmpStream.zalloc = Z_NULL;
+						cmpStream.zfree = Z_NULL;
+						cmpStream.opaque = Z_NULL;
+
+						if (deflateInit(&cmpStream, options.clevel) != Z_OK)
+						{
+							fclose(outFile);
+							std::remove(tmpDataFilename.c_str());
+							throw std::runtime_error("Unable to compress data.");
+						}
+
+						static const size_t inBuffSize = 16348u;
+						static const size_t outBuffSize = 16348u;
+
+						Bytef* inputBuffer = new Bytef[inBuffSize];
 						size_t numRead = 0;
 						size_t numReadTotal = 0;
+
+						Bytef* outputBuffer = new Bytef[outBuffSize];
+
 #if defined(_WIN32)
-						while ((numRead = fread_s(buffer, 16348u, 1, sizeof(buffer), resFile)) > 0)
+						while ((numRead = fread_s(inputBuffer, inBuffSize, 1, sizeof(inputBuffer), resFile)) > 0)
 #else
 						while ((numRead = fread(buffer, 1, 16348u, resFile)) > 0)
 #endif
 						{
 							numReadTotal += numRead;
-							if (gzwrite(outFile, buffer, static_cast<unsigned int>(numRead)) != static_cast<int>(numRead))
-							{
-								// abort packing
-								fclose(resFile);
-								gzclose(outFile);
-								std::remove(tmpDataFilename.c_str());
-								throw std::runtime_error("Unable to write to temporary file: " + tmpDataFilename);
-							}
+
+							cmpStream.next_in = &inputBuffer[0];
+							cmpStream.avail_in = numRead;
+
+							int flush = feof(resFile) ? Z_FINISH : Z_NO_FLUSH;
+
+							do {
+								cmpStream.next_out = &outputBuffer[0];
+								cmpStream.avail_out = outBuffSize;
+
+								int streamState = deflate(&cmpStream, flush);
+								
+								if (streamState == Z_STREAM_ERROR)
+								{
+									delete[] inputBuffer;
+									delete[] outputBuffer;
+									fclose(resFile);
+									fclose(outFile);
+									std::remove(tmpDataFilename.c_str());
+									throw std::runtime_error("Unable to compress data.");
+								}
+
+								size_t compressedChunkSize = outBuffSize - cmpStream.avail_out;
+
+								if (fwrite(outputBuffer, 1u, compressedChunkSize, outFile) != compressedChunkSize)
+								{
+									delete[] inputBuffer;
+									delete[] outputBuffer;
+									fclose(resFile);
+									fclose(outFile);
+									std::remove(tmpDataFilename.c_str());
+									throw std::runtime_error("Unable to compress data.");
+								}
+
+							} while (cmpStream.avail_out == 0);
+							
 							switch (options.chksum)
 							{
 								case ChkSumOption::ADLER32:
-									checksum = adler32(checksum, buffer, static_cast<unsigned int>(numRead));
+									checksum = adler32(checksum, inputBuffer, static_cast<unsigned int>(numRead));
 									break;
 								case ChkSumOption::CRC32:
-									checksum = crc32(checksum, buffer, static_cast<unsigned int>(numRead));
+									checksum = crc32(checksum, inputBuffer, static_cast<unsigned int>(numRead));
 									break;
 							}
 						}
+
 						dictDataMap[category][key].checksum = checksum;
-						delete[] buffer;
+						delete[] inputBuffer;
+						delete[] outputBuffer;
 						fclose(resFile);
+
+						if (deflateEnd(&cmpStream) != Z_OK)
+						{
+							fclose(outFile);
+							std::remove(tmpDataFilename.c_str());
+							throw std::runtime_error("Unable to compress data.");
+						}
 
 						totalRead += numReadTotal;
 
@@ -443,7 +504,8 @@ namespace Lime
 						{
 							// read and written sizes don't match - something isn't right
 							// abort packing
-							gzclose(outFile);
+							///gzclose(outFile);
+							fclose(outFile);
 							std::remove(tmpDataFilename.c_str());
 							throw std::runtime_error("Unable to process file: " + resFilename);
 						}
@@ -451,18 +513,18 @@ namespace Lime
 					else
 					{
 						// abort packing
-						gzclose(outFile);
+						///gzclose(outFile);
+						fclose(outFile);
 						std::remove(tmpDataFilename.c_str());
 						throw std::runtime_error("Unable to read from file: " + resFilename);
 					}
 				}
-
-				first = false;
 			}
 		}
 
 		// close the stream
-		gzclose(outFile);
+		///gzclose(outFile);
+		fclose(outFile);
 
 		// get total compressed data size
 		const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
@@ -685,13 +747,6 @@ namespace Lime
 				{
 					goto error;
 				}
-			}
-
-			// data size
-			T_Bytes dataSizeBytes = toBytes(toBigEndian(static_cast<uint64_t>(dataSize)));
-			if (fwrite(dataSizeBytes.data(), 1u, dataSizeBytes.size(), dataFile) != dataSizeBytes.size())
-			{
-				goto error;
 			}
 
 			// write compressed dictionary

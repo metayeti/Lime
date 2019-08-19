@@ -55,6 +55,8 @@ void Demo::ExtractData()
 	// This opens the datafile.
 	Unlime::Extractor ex(*unlime);
 
+	///Unlime::T_Bytes test = ex.get("@test", "key");
+
 	// Now we can seamlessly extract any data we require with ex.get().
 	// Here we acquire some data for our textures.
 	LoadTexture(texSprite1, ex.get("graphics", "sprite1"));
@@ -89,7 +91,7 @@ void Demo::Init()
 	// be thrown in case data corruption is detected.
 	// Set false to skip (skips automatically for datafiles packed with -chksum=none).
 	// Default is true.
-	unlime->options.integrityCheck = true;
+	unlime->options.integrityCheck = false;
 
 	// checkHeadString makes unlime throw an exception if options.headString does not match.
 	// The head string defined in the datafile.
@@ -106,7 +108,7 @@ void Demo::Init()
 	ExtractData();
 
 	// Create the sprites for our demo.
-
+	PrepareSprites();
 
 	// Create the demo window.
 	CreateApplicationWindow();

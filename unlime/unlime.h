@@ -96,8 +96,6 @@ private:
 	uint32_t dictSize = 0;
 	uint32_t dictOffset = 0;
 	uint32_t dictChecksum = 0;
-
-	uint64_t dataSize = 0;
 	uint64_t dataOffset = 0;
 
 	bool wasValidated = false;
@@ -187,9 +185,8 @@ private:
 
 	void readCompressedStream(T_Bytes& destination, size_t size, uint32_t knownChecksum = 0)
 	{
-		static const size_t inBuffSize = 100;
-//		static const size_t outBuffSize = 16348;
-		static const size_t outBuffSize = 500;
+		static const size_t inBuffSize = 16348u;
+		static const size_t outBuffSize = 16348u;
 
 		z_stream dcmpStream;
 		dcmpStream.zalloc = Z_NULL;
@@ -217,8 +214,7 @@ private:
 			dcmpStream.next_in = &inputBuffer[0];
 			dcmpStream.avail_in = static_cast<unsigned int>(bytesToRead);
 
-			while (true)
-			{
+			do {
 				dcmpStream.next_out = &outputBuffer[0];
 				dcmpStream.avail_out = outBuffSize;
 
@@ -232,11 +228,7 @@ private:
 
 				destination.insert(destination.end(), outputBuffer, outputBuffer + (outBuffSize - dcmpStream.avail_out));
 
-				if (dcmpStream.avail_in == 0)
-				{
-					break;
-				}
-			}
+			} while (dcmpStream.avail_out == 0);
 
 		} while (remainingBytesToRead != 0);
 
@@ -347,7 +339,6 @@ private:
 		{
 			readValueFromStream(dictChecksum);
 		}
-		readValueFromStream(dataSize);
 
 		// calculate offsets
 		dictOffset = static_cast<uint32_t>(datafileStream.tellg());
@@ -484,11 +475,11 @@ public:
 				unlime->readDict();
 			}
 			T_Bytes data;
-			/*
+			
 			T_DictItem const& dictItem = unlime->dictMap[category][key];
 			unlime->datafileStream.seekg(unlime->dataOffset + dictItem.seek_id);
 			unlime->readCompressedStream(data, static_cast<size_t>(dictItem.size), dictItem.checksum);
-			*/
+			
 			return data;
 		}
 	};

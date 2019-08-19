@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 #include <stdexcept>
 ///#include <cstdio>
 #include <fstream>
@@ -65,6 +66,7 @@ private:
 	const std::string ERROR_VERSION_MISMATCH = "Datafile version mismatch!";
 	const std::string ERROR_UNKNOWN_DATAFILE = "Unknown datafile!";
 	const std::string ERROR_CORRUPTED_FILE = "Corrupted datafile format.";
+	const std::string ERROR_DECOMPRESS = "Unable to decompress data.";
 
 	enum class DatafileChecksumFunc : unsigned char
 	{
@@ -73,16 +75,16 @@ private:
 
 	const uint64_t minimumDatafileSize = 10;
 
+	const std::string datafileFilename;
+
 	struct T_DictItem
 	{
-		uint64_t seek_id;
-		uint64_t size;
-		uint32_t checksum;
+		uint64_t seek_id = 0;
+		uint64_t size = 0;
+		uint32_t checksum = 0;
 	};
 	using T_DictCategory = std::unordered_map<std::string, T_DictItem>;
 	using T_DictMap = std::unordered_map<std::string, T_DictCategory>;
-
-	const std::string datafileFilename;
 
 	T_DictMap dictMap;
 	bool dictWasRead = false;
@@ -143,7 +145,7 @@ private:
 	}
 
 	template<class T>
-	void readValue(T& value)
+	void readValueFromStream(T& value)
 	{
 		value = 0;
 		size_t n_bytes = sizeof(T);
@@ -156,10 +158,112 @@ private:
 	}
 
 	template<class T>
-	void readBytes(T& buffer, size_t size)
+	void readValueFromBytes(T& value, T_Bytes const& bytes, size_t& at)
 	{
-		buffer.resize(size);
-		datafileStream.read((char*)&buffer[0], size);
+		value = 0;
+		size_t n_bytes = sizeof(T);
+		for (size_t i = 0; i < n_bytes; ++i)
+		{
+			value = (value << 8) + bytes[at + i];
+		}
+		at += n_bytes;
+	}
+
+	template<class T>
+	void readBytesFromStream(T& destination, size_t size)
+	{
+		destination.resize(size);
+		datafileStream.read((char*)&destination[0], size);
+	}
+
+	void readStringFromBytes(std::string& destination, size_t size, T_Bytes const& buffer, size_t& at)
+	{
+		destination.resize(size);
+		T_Bytes::const_iterator begin = buffer.begin() + at;
+		T_Bytes::const_iterator end = buffer.begin() + at + size;
+		destination.assign(begin, end);
+		at += size;
+	}
+
+	void readCompressedStream(T_Bytes& destination, size_t size, uint32_t knownChecksum = 0)
+	{
+		static const size_t inBuffSize = 100;
+//		static const size_t outBuffSize = 16348;
+		static const size_t outBuffSize = 500;
+
+		z_stream dcmpStream;
+		dcmpStream.zalloc = Z_NULL;
+		dcmpStream.zfree = Z_NULL;
+		dcmpStream.opaque = Z_NULL;
+		dcmpStream.avail_in = 0u;
+		dcmpStream.next_in = Z_NULL;
+		if (inflateInit(&dcmpStream) != Z_OK)
+		{
+			throw std::runtime_error(ERROR_DECOMPRESS);
+		}
+
+		T_Bytes inputBuffer;
+		inputBuffer.reserve(inBuffSize);
+		size_t totalBytesRead = 0;
+		size_t remainingBytesToRead = size;
+	
+		Bytef* outputBuffer = new Bytef[outBuffSize];
+
+		do {
+			size_t bytesToRead = std::min(inBuffSize, remainingBytesToRead);
+			readBytesFromStream(inputBuffer, bytesToRead);
+			remainingBytesToRead -= bytesToRead;
+
+			dcmpStream.next_in = &inputBuffer[0];
+			dcmpStream.avail_in = static_cast<unsigned int>(bytesToRead);
+
+			while (true)
+			{
+				dcmpStream.next_out = &outputBuffer[0];
+				dcmpStream.avail_out = outBuffSize;
+
+				int streamState = inflate(&dcmpStream, Z_NO_FLUSH);
+
+				if (streamState != Z_OK && streamState != Z_STREAM_END)
+				{
+					delete[] outputBuffer;
+					throw std::runtime_error(ERROR_DECOMPRESS);
+				}
+
+				destination.insert(destination.end(), outputBuffer, outputBuffer + (outBuffSize - dcmpStream.avail_out));
+
+				if (dcmpStream.avail_in == 0)
+				{
+					break;
+				}
+			}
+
+		} while (remainingBytesToRead != 0);
+
+		delete[] outputBuffer;
+
+		if (inflateEnd(&dcmpStream) != Z_OK)
+		{
+			throw std::runtime_error(ERROR_DECOMPRESS);
+		}
+		
+		if (options.integrityCheck)
+		{
+			uint32_t checksum = 0;
+			switch (chksumFunc)
+			{
+				case DatafileChecksumFunc::ADLER32:
+					checksum = adler32(0ul, destination.data(), static_cast<unsigned int>(destination.size()));
+					break;
+				case DatafileChecksumFunc::CRC32:
+					checksum = crc32(0ul, destination.data(), static_cast<unsigned int>(destination.size()));
+					break;
+			}
+			if (checksum != knownChecksum)
+			{
+				throw std::runtime_error(ERROR_CORRUPTED_FILE);
+			}
+		}
 	}
 
 	void validateFormat()
@@ -179,11 +283,11 @@ private:
 		// retreive bgn and end endpoints
 		datafileStream.seekg(0);
 		std::string bgnEndpointStr;
-		readBytes(bgnEndpointStr, LM_ENDPOINT_LENGTH);
+		readBytesFromStream(bgnEndpointStr, LM_ENDPOINT_LENGTH);
 
 		datafileStream.seekg(-LM_ENDPOINT_LENGTH, datafileStream.end);
 		std::string endEndpointStr;
-		readBytes(endEndpointStr, LM_ENDPOINT_LENGTH);
+		readBytesFromStream(endEndpointStr, LM_ENDPOINT_LENGTH);
 
 		// validate endpoints and extract checksum function used
 		if (bgnEndpointStr == LM_BGN_ADLER32 && endEndpointStr == LM_END_ADLER32)
@@ -206,10 +310,10 @@ private:
 		// retreive version string
 		datafileStream.seekg(LM_ENDPOINT_LENGTH);
 		uint8_t versionStrLength = 0;
-		readValue(versionStrLength);
+		readValueFromStream(versionStrLength);
 
 		std::string versionStr;
-		readBytes(versionStr, versionStrLength);
+		readBytesFromStream(versionStr, versionStrLength);
 
 		if (versionStr != LIME_VERSION)
 		{
@@ -220,12 +324,12 @@ private:
 		}
 
 		uint8_t headStrLength = 0;
-		readValue(headStrLength);
+		readValueFromStream(headStrLength);
 
 		if (options.checkHeadString)
 		{
 			std::string headStr;
-			readBytes(headStr, headStrLength);
+			readBytesFromStream(headStr, headStrLength);
 
 			if (headStr != options.headString)
 			{
@@ -238,18 +342,18 @@ private:
 		}
 
 		// extract header data
-		readValue(dictSize);
+		readValueFromStream(dictSize);
 		if (chksumFunc != DatafileChecksumFunc::NONE)
 		{
-			readValue(dictChecksum);
+			readValueFromStream(dictChecksum);
 		}
-		readValue(dataSize);
+		readValueFromStream(dataSize);
 
 		// calculate offsets
 		dictOffset = static_cast<uint32_t>(datafileStream.tellg());
 		dataOffset = static_cast<uint64_t>(dictSize) + static_cast<uint64_t>(dictOffset);
 
-		// validation done
+		// validation complete
 		wasValidated = true;
 	}
 
@@ -260,16 +364,47 @@ private:
 			throw std::runtime_error(ERROR_UNKNOWN_ERROR);
 		}
 
-		/*
-		datafileStream.seekg(dictOffset);
-		T_Bytes dictBytesCompressed;
-		readBytes(dictBytesCompressed, dictSize);
+		dictMap.clear();
 
-		T_Bytes dictBytesDecompressed;
-		uLongf destLen = 100000u;
-		dictBytesDecompressed.resize(destLen);
-		uncompress(&dictBytesDecompressed[0], &destLen, dictBytesCompressed.data(), dictBytesCompressed.size());
-		*/
+		datafileStream.seekg(dictOffset);
+		T_Bytes dictBytes;
+		readCompressedStream(dictBytes, dictSize, dictChecksum);
+
+		size_t readAt = 0;
+
+		uint32_t n_categories = 0;
+		readValueFromBytes(n_categories, dictBytes, readAt);
+
+		for (size_t i = 0; i < n_categories; ++i)
+		{
+			uint8_t categoryKeyLength = 0;
+			readValueFromBytes(categoryKeyLength, dictBytes, readAt);
+
+			std::string categoryKey;
+			readStringFromBytes(categoryKey, categoryKeyLength, dictBytes, readAt);
+
+			uint32_t n_dataNodes;
+			readValueFromBytes(n_dataNodes, dictBytes, readAt);
+
+			for (size_t j = 0; j < n_dataNodes; ++j)
+			{
+				uint8_t dataKeyLength = 0;
+				readValueFromBytes(dataKeyLength, dictBytes, readAt);
+
+				std::string dataKey;
+				readStringFromBytes(dataKey, dataKeyLength, dictBytes, readAt);
+
+				T_DictItem dictItem;
+				readValueFromBytes(dictItem.seek_id, dictBytes, readAt);
+				readValueFromBytes(dictItem.size, dictBytes, readAt);
+				if (chksumFunc != DatafileChecksumFunc::NONE)
+				{
+					readValueFromBytes(dictItem.checksum, dictBytes, readAt);
+				}
+
+				dictMap[categoryKey][dataKey] = dictItem;
+			}
+		}
 	}
 
 public:
@@ -348,7 +483,13 @@ public:
 			{
 				unlime->readDict();
 			}
-			return T_Bytes();
+			T_Bytes data;
+			/*
+			T_DictItem const& dictItem = unlime->dictMap[category][key];
+			unlime->datafileStream.seekg(unlime->dataOffset + dictItem.seek_id);
+			unlime->readCompressedStream(data, static_cast<size_t>(dictItem.size), dictItem.checksum);
+			*/
+			return data;
 		}
 	};
 

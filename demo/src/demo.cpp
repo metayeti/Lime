@@ -63,6 +63,17 @@ void Demo::ExtractData()
 	// The datafile is closed when ex goes out of scope.
 }
 
+void Demo::PrepareSprites()
+{
+	sprite1.setTexture(texSprite1);
+	sprite1.setTextureRect({ 0, 0, 40, 40 });
+	sprite1.setPosition({ 0.f, 0.f });
+
+	sprite2.setTexture(texSprite2);
+	sprite2.setTextureRect({ 0, 0, 80, 80 });
+	sprite2.setPosition({ 150.f, 100.f });
+}
+
 void Demo::Init()
 {
 	// Create the unlime object on our demo datafile.
@@ -94,7 +105,10 @@ void Demo::Init()
 	// We can now proceed to extract data from the datafile.
 	ExtractData();
 
-	// Create the demo window
+	// Create the sprites for our demo.
+
+
+	// Create the demo window.
 	CreateApplicationWindow();
 }
 
@@ -113,6 +127,8 @@ void Demo::Run()
 			}
 		}
 		// Draw to screen
+		window->draw(sprite1);
+		window->draw(sprite2);
 		window->display();
 	}
 }

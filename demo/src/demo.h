@@ -57,11 +57,15 @@ private:
 	sf::Texture texSprite1;
 	sf::Texture texSprite2;
 
+	sf::Sprite sprite1;
+	sf::Sprite sprite2;
+
 	void CreateApplicationWindow();
 
 	static void LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data);
 
 	void ExtractData();
+	void PrepareSprites();
 
 public:
 	void Init();

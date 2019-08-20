@@ -185,6 +185,8 @@ private:
 
 	void readCompressedStream(T_Bytes& destination, size_t size, uint32_t knownChecksum = 0)
 	{
+		// TODO throw on size=0
+
 		static const size_t inBuffSize = 16348u;
 		static const size_t outBuffSize = 16348u;
 
@@ -475,7 +477,6 @@ public:
 				unlime->readDict();
 			}
 			T_Bytes data;
-			
 			T_DictItem const& dictItem = unlime->dictMap[category][key];
 			unlime->datafileStream.seekg(unlime->dataOffset + dictItem.seek_id);
 			unlime->readCompressedStream(data, static_cast<size_t>(dictItem.size), dictItem.checksum);

@@ -9,10 +9,10 @@
 ; Categories and keys are stripped of leading and trailing
 ; whitespace and are case sensitive.
 
-[@meta]
-name = Demo datafile
-version = 1.0
-important info = I like giraffes!
+;[@meta]
+;name = Demo datafile
+;version = 1.0
+;important info = I like giraffes!
 
 ; A (non-meta) section contains a group of keys which point
 ; to resource files. Filenames are lost in packing.
@@ -20,9 +20,22 @@ important info = I like giraffes!
 ; Names of categories and keys are up to you to decide and are
 ; used for asset retreival within the game.
 
+; font files
+
+;[fonts]
+;Lato = resources/fonts/Lato/Lato-Regular.ttf
+
+;[fonts]
+;Lato = resources/tmp/test1.jpg
+;123 = resources/tmp/test2.gif
+;1234 = resources/tmp/test3.png
+;1253 = resources/tmp/test4.jpg
+;123 62= resources/tmp/test5.jpg
+
 ; graphics files
 
 [graphics]
-sprite1 = resources/sprite1.png
-sprite2 = resources/sprite2.png
-;sprite3 = resources/sprite3.png
+;123 62= resources/tmp/test5.jpg
+sprite1 = resources/graphics/sprite1.png
+sprite2 = resources/graphics/sprite2.png
+;sprite3 = resources/graphics/sprite3.png

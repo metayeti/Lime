@@ -44,6 +44,27 @@ void Demo::CreateApplicationWindow()
 	window->setPosition({ window_x, window_y });
 }
 
+void Demo::PrepareDemo()
+{
+	//font.loadFromFile("Arial.ttf");
+
+	/*
+	text1.setString("Hello World");
+	text1.setPosition(0, 0);
+	text1.setFillColor(sf::Color::White);
+	text1.setCharacterSize(24);
+	text1.setFont(font);
+	*/
+
+	sprite1.setTexture(texSprite1);
+	sprite1.setTextureRect({ 0, 0, 40, 40 });
+	sprite1.setPosition({ 320.f, 200.f });
+
+	sprite2.setTexture(texSprite2);
+	sprite2.setTextureRect({ 0, 0, 80, 80 });
+	sprite2.setPosition({ 150.f, 100.f });
+}
+
 void Demo::LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data)
 {
 	texture.loadFromMemory(data.data(), data.size());	
@@ -56,6 +77,8 @@ void Demo::ExtractData()
 	Unlime::Extractor ex(*unlime);
 
 	///Unlime::T_Bytes test = ex.get("@test", "key");
+	///Unlime::T_Bytes xyz = ex.get("fonts", "Lato");
+	///font.loadFromMemory(xyz.data(), xyz.size());
 
 	// Now we can seamlessly extract any data we require with ex.get().
 	// Here we acquire some data for our textures.
@@ -63,17 +86,6 @@ void Demo::ExtractData()
 	LoadTexture(texSprite2, ex.get("graphics", "sprite2"));
 
 	// The datafile is closed when ex goes out of scope.
-}
-
-void Demo::PrepareSprites()
-{
-	sprite1.setTexture(texSprite1);
-	sprite1.setTextureRect({ 0, 0, 40, 40 });
-	sprite1.setPosition({ 0.f, 0.f });
-
-	sprite2.setTexture(texSprite2);
-	sprite2.setTextureRect({ 0, 0, 80, 80 });
-	sprite2.setPosition({ 150.f, 100.f });
 }
 
 void Demo::Init()
@@ -108,7 +120,7 @@ void Demo::Init()
 	ExtractData();
 
 	// Create the sprites for our demo.
-	PrepareSprites();
+	PrepareDemo();
 
 	// Create the demo window.
 	CreateApplicationWindow();
@@ -129,6 +141,8 @@ void Demo::Run()
 			}
 		}
 		// Draw to screen
+		window->clear({ 40, 40, 40, 255 });
+		window->draw(text1);
 		window->draw(sprite1);
 		window->draw(sprite2);
 		window->display();

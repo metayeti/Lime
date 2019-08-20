@@ -328,6 +328,8 @@ namespace Lime
 					// meta category, store value directly
 					auto const& data = value;
 
+					const size_t offset = ftell(outFile);
+
 					uLong dataBytesCompressedSize = compressBound(static_cast<uLong>(data.size()));
 					Bytef* dataBytesCompressedData = new Bytef[dataBytesCompressedSize];
 					if (compress2(dataBytesCompressedData, &dataBytesCompressedSize, (const Bytef*)data.data(), static_cast<uLong>(data.size()), options.clevel) != Z_OK)
@@ -358,14 +360,14 @@ namespace Lime
 					}
 
 					// store offset and checksum
-					///const size_t offset = static_cast<size_t>(gzoffset(outFile));
-					const size_t offset = ftell(outFile);
 					dictDataMap[category][key] = { offset, checksum };
 				}
 				else
 				{
 #if defined(_WIN32)
 					auto resFilename = value;
+					// on windows we can safely lowercase the filename so we don't end up with duplicate data
+					// due to mismatched case
 					std::transform(resFilename.begin(), resFilename.end(), resFilename.begin(), ::tolower);
 #else
 					auto const& resFilename = value;
@@ -433,15 +435,15 @@ namespace Lime
 						Bytef* outputBuffer = new Bytef[outBuffSize];
 
 #if defined(_WIN32)
-						while ((numRead = fread_s(inputBuffer, inBuffSize, 1, sizeof(inputBuffer), resFile)) > 0)
+						while ((numRead = fread_s(inputBuffer, inBuffSize, 1, inBuffSize, resFile)) > 0)
 #else
-						while ((numRead = fread(buffer, 1, 16348u, resFile)) > 0)
+						while ((numRead = fread(buffer, 1, inBuffSize, resFile)) > 0)
 #endif
 						{
 							numReadTotal += numRead;
 
 							cmpStream.next_in = &inputBuffer[0];
-							cmpStream.avail_in = numRead;
+							cmpStream.avail_in = static_cast<uInt>(numRead);
 
 							int flush = feof(resFile) ? Z_FINISH : Z_NO_FLUSH;
 
@@ -772,7 +774,7 @@ namespace Lime
 				size_t numRead = 0;
 				size_t totalDataRead = 0;
 #if defined(_WIN32)
-				while ((numRead = fread_s(buffer, 16348u, 1, sizeof(buffer), cDataFile)) > 0)
+				while ((numRead = fread_s(buffer, 16348u, 1, 16348u, cDataFile)) > 0)
 #else
 				while ((numRead = fread(buffer, 1, 16348u, cDataFile)) > 0)
 #endif

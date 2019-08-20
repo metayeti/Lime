@@ -280,7 +280,6 @@ namespace Lime
 		inf << "\nWriting data file: " << outputFilename << " ... ";
 
 		size_t totalRead = 0;
-		uint64_t dataSize = 0;
 
 		struct DictItemData
 		{
@@ -504,7 +503,6 @@ namespace Lime
 
 						// update size
 						dataItem.size = totalWritten;
-						dataSize += totalWritten;
 
 						if (deflateEnd(&cmpStream) != Z_OK)
 						{
@@ -542,7 +540,7 @@ namespace Lime
 		fclose(outFile);
 
 		// get total compressed data size
-		//const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
+		const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
 
 		/*
 		// we need to do some processing here to calculate sizes for each resource
@@ -836,7 +834,7 @@ namespace Lime
 	success:
 		// cleanup
 		delete[] dictBytesCompressedData;
-		/////std::remove(tmpDataFilename.c_str());
+		std::remove(tmpDataFilename.c_str());
 
 		// writing successful, print out some statistics
 

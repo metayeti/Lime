@@ -142,7 +142,7 @@ void Demo::Run()
 		}
 		// Draw to screen
 		window->clear({ 40, 40, 40, 255 });
-		window->draw(text1);
+		//window->draw(text1);
 		window->draw(sprite1);
 		window->draw(sprite2);
 		window->display();

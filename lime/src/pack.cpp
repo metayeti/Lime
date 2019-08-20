@@ -280,6 +280,7 @@ namespace Lime
 		inf << "\nWriting data file: " << outputFilename << " ... ";
 
 		size_t totalRead = 0;
+		uint64_t dataSize = 0;
 
 		struct DictItemData
 		{
@@ -359,8 +360,8 @@ namespace Lime
 							break;
 					}
 
-					// store offset and checksum
-					dictDataMap[category][key] = { offset, checksum };
+					// store offset, checksum and size
+					dictDataMap[category][key] = { offset, checksum, static_cast<uint8_t>(dataBytesCompressedSize) };
 				}
 				else
 				{
@@ -377,9 +378,11 @@ namespace Lime
 					{
 						// we already packed this file so simply reference the same item and skip packing again
 						auto& dataItem = dictDataMap[category][key];
-						dataItem = { filenameOffsetIt->second, dataItem.checksum };
+						dataItem = { filenameOffsetIt->second, dataItem.checksum, dataItem.size };
 						continue;
 					}
+					
+					size_t totalWritten = 0u;
 
 					// store current offset
 					const size_t offset = ftell(outFile);
@@ -475,6 +478,8 @@ namespace Lime
 									throw std::runtime_error("Unable to compress data.");
 								}
 
+								totalWritten += compressedChunkSize;
+
 							} while (cmpStream.avail_out == 0);
 							
 							switch (options.chksum)
@@ -488,10 +493,18 @@ namespace Lime
 							}
 						}
 
-						dictDataMap[category][key].checksum = checksum;
+						fclose(resFile);
 						delete[] inputBuffer;
 						delete[] outputBuffer;
-						fclose(resFile);
+
+						auto& dataItem = dictDataMap[category][key];
+
+						// update checksum
+						dataItem.checksum = checksum;
+
+						// update size
+						dataItem.size = totalWritten;
+						dataSize += totalWritten;
 
 						if (deflateEnd(&cmpStream) != Z_OK)
 						{
@@ -504,7 +517,7 @@ namespace Lime
 
 						if (resFileSize != numReadTotal)
 						{
-							// read and written sizes don't match - something isn't right
+							// sizes don't match - something isn't right
 							// abort packing
 							///gzclose(outFile);
 							fclose(outFile);
@@ -529,8 +542,9 @@ namespace Lime
 		fclose(outFile);
 
 		// get total compressed data size
-		const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
+		//const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
 
+		/*
 		// we need to do some processing here to calculate sizes for each resource
 		// size of each element is the offset of the next element, skipping duplicates
 		{
@@ -589,6 +603,7 @@ namespace Lime
 				it.first->size = it.second->size;
 			}
 		}
+		*/
 
 		// create the dictionary binary
 		T_Bytes dictBytes;
@@ -821,7 +836,7 @@ namespace Lime
 	success:
 		// cleanup
 		delete[] dictBytesCompressedData;
-		std::remove(tmpDataFilename.c_str());
+		/////std::remove(tmpDataFilename.c_str());
 
 		// writing successful, print out some statistics
 

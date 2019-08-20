@@ -437,7 +437,7 @@ namespace Lime
 #if defined(_WIN32)
 						while ((numRead = fread_s(inputBuffer, inBuffSize, 1, inBuffSize, resFile)) > 0)
 #else
-						while ((numRead = fread(buffer, 1, inBuffSize, resFile)) > 0)
+						while ((numRead = fread(inputBuffer, 1, inBuffSize, resFile)) > 0)
 #endif
 						{
 							numReadTotal += numRead;

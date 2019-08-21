@@ -352,10 +352,10 @@ namespace Lime
 					switch (options.chksum)
 					{
 						case ChkSumOption::ADLER32:
-							checksum = adler32(0ul, reinterpret_cast<const Bytef*>(data.c_str()), static_cast<unsigned int>(data.size()));
+							checksum = adler32_z(0ul, reinterpret_cast<const Bytef*>(data.c_str()), data.size());
 							break;
 						case ChkSumOption::CRC32:
-							checksum = crc32(0ul, reinterpret_cast<const Bytef*>(data.c_str()), static_cast<unsigned int>(data.size()));
+							checksum = crc32_z(0ul, reinterpret_cast<const Bytef*>(data.c_str()), data.size());
 							break;
 					}
 
@@ -407,10 +407,10 @@ namespace Lime
 						switch (options.chksum)
 						{
 							case ChkSumOption::ADLER32:
-								checksum = adler32(0ul, Z_NULL, 0u);
+								checksum = adler32_z(0ul, Z_NULL, 0u);
 								break;
 							case ChkSumOption::CRC32:
-								checksum = crc32(0ul, Z_NULL, 0u);
+								checksum = crc32_z(0ul, Z_NULL, 0u);
 								break;
 						}
 
@@ -484,10 +484,10 @@ namespace Lime
 							switch (options.chksum)
 							{
 								case ChkSumOption::ADLER32:
-									checksum = adler32(checksum, inputBuffer, static_cast<unsigned int>(numRead));
+									checksum = adler32_z(checksum, inputBuffer, numRead);
 									break;
 								case ChkSumOption::CRC32:
-									checksum = crc32(checksum, inputBuffer, static_cast<unsigned int>(numRead));
+									checksum = crc32_z(checksum, inputBuffer, numRead);
 									break;
 							}
 						}
@@ -542,67 +542,6 @@ namespace Lime
 		// get total compressed data size
 		const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
 
-		/*
-		// we need to do some processing here to calculate sizes for each resource
-		// size of each element is the offset of the next element, skipping duplicates
-		{
-			// calculate data node sizes
-			DictItemData* previousData = nullptr;
-			std::vector<size_t> knownOffsets;
-			std::vector<const DictItemData*> knownOffsetItems;
-			using T_DuplicateData = std::pair<DictItemData*, const DictItemData*>; // pair<ptr to duplicate, ptr to original>
-			std::vector<T_DuplicateData> duplicatesToUpdate;
-			size_t lastOffset = 0;
-
-			for (auto const& it : dictDataMap)
-			{
-				auto const& categoryKey = it.first;
-				auto const& collection = it.second;
-
-				for (auto const& it2 : collection)
-				{
-					auto const& collectionKey = it2.first;
-					DictItemData const& itemData = it2.second;
-					DictItemData& itemDataModifiable = dictDataMap[categoryKey][collectionKey];
-
-					lastOffset = itemData.offset;
-
-					auto knownOffsetIt = std::find(knownOffsets.begin(), knownOffsets.end(), lastOffset);
-
-					if (knownOffsetIt != knownOffsets.end())
-					{
-						// this is a duplicate offset
-						auto knownOffsetIndex = std::distance(knownOffsets.begin(), knownOffsetIt);
-						auto const* knownOffsetItem = knownOffsetItems.at(knownOffsetIndex);
-						duplicatesToUpdate.push_back(std::make_pair(&itemDataModifiable, knownOffsetItem));
-						continue;
-					}
-					knownOffsets.push_back(itemData.offset);
-					knownOffsetItems.push_back(&itemData);
-
-					if (previousData)
-					{
-						previousData->size = lastOffset;
-					}
-
-					previousData = &itemDataModifiable;
-				}
-			}
-
-			// set size of last item
-			if (previousData)
-			{
-				previousData->size = dataSize - lastOffset;
-			}
-
-			// update all duplicate size as well
-			for (auto& it : duplicatesToUpdate)
-			{
-				it.first->size = it.second->size;
-			}
-		}
-		*/
-
 		// create the dictionary binary
 		T_Bytes dictBytes;
 
@@ -649,10 +588,10 @@ namespace Lime
 		switch (options.chksum)
 		{
 			case ChkSumOption::ADLER32:
-				dictChecksum = adler32(0ul, dictBytes.data(), static_cast<unsigned int>(dictBytes.size()));
+				dictChecksum = adler32_z(0ul, dictBytes.data(), dictBytes.size());
 				break;
 			case ChkSumOption::CRC32:
-				dictChecksum = crc32(0ul, dictBytes.data(), static_cast<unsigned int>(dictBytes.size()));
+				dictChecksum = crc32_z(0ul, dictBytes.data(), dictBytes.size());
 				break;
 		}
 

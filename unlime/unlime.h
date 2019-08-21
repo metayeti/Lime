@@ -249,10 +249,10 @@ private:
 			switch (chksumFunc)
 			{
 				case DatafileChecksumFunc::ADLER32:
-					checksum = adler32(0ul, destination.data(), static_cast<unsigned int>(destination.size()));
+					checksum = adler32_z(0ul, destination.data(), destination.size());
 					break;
 				case DatafileChecksumFunc::CRC32:
-					checksum = crc32(0ul, destination.data(), static_cast<unsigned int>(destination.size()));
+					checksum = crc32_z(0ul, destination.data(), destination.size());
 					break;
 			}
 			if (checksum != knownChecksum)

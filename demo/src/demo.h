@@ -50,14 +50,22 @@ private:
 	const std::string datafileFilename = "../datafile/demo.dat";
 #endif
 
-	sf::RenderWindow* window = nullptr;
+	// pointer to SFML window
+	std::unique_ptr<sf::RenderWindow> window;
 
+	// pointer to Unlime
 	std::unique_ptr<Unlime> unlime;
 
+	// demo textures
 	sf::Texture texSprite1;
 	sf::Texture texSprite2;
 
+	// demo font
+	Unlime::T_Bytes fontData; // SFML requires font data to remain in memory
 	sf::Font font;
+
+	// on-screen objects
+
 	sf::Text text1;
 
 	sf::Sprite sprite1;
@@ -75,7 +83,6 @@ private:
 public:
 	void Init();
 	void Run();
-	void Unload();
 };
 
 #endif // LIME_DEMO_H

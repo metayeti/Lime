@@ -59,6 +59,5 @@ int main(int argc, char* args[])
 			<< std::endl;
 #endif
 	}
-	demo.Unload();
 	return 0;
 }

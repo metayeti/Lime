@@ -29,14 +29,11 @@
   */
 
 #include "demo.h"
+#include <fstream>
 
 void Demo::CreateApplicationWindow()
 {
-	if (window)
-	{
-		return;
-	}
-	window = new sf::RenderWindow(sf::VideoMode(window_width, window_height), "LimePack Demo", sf::Style::Close);
+	window = std::make_unique<sf::RenderWindow>(sf::VideoMode(window_width, window_height), "LimePack Demo", sf::Style::Close);
 	window->setFramerateLimit(60u);
 	const sf::VideoMode videoMode = sf::VideoMode::getDesktopMode();
 	const int window_x = (videoMode.width - window_width) / 2;
@@ -46,15 +43,11 @@ void Demo::CreateApplicationWindow()
 
 void Demo::PrepareDemo()
 {
-	//font.loadFromFile("Arial.ttf");
-
-	/*
-	text1.setString("Hello World");
-	text1.setPosition(0, 0);
+	text1.setFont(font);
+	//text1.setString("Hello World");
+	text1.setPosition(50, 50);
 	text1.setFillColor(sf::Color::White);
 	text1.setCharacterSize(24);
-	text1.setFont(font);
-	*/
 
 	sprite1.setTexture(texSprite1);
 	sprite1.setTextureRect({ 0, 0, 40, 40 });
@@ -76,12 +69,16 @@ void Demo::ExtractData()
 	// This opens the datafile.
 	Unlime::Extractor ex(*unlime);
 
-	///Unlime::T_Bytes test = ex.get("@test", "key");
-	///Unlime::T_Bytes xyz = ex.get("fonts", "Lato");
-	///font.loadFromMemory(xyz.data(), xyz.size());
+	Unlime::T_Bytes blah = ex.get("@meta", "name");
+	std::string xz((char*)blah.data(), blah.size());
+	text1.setString(xz);
 
 	// Now we can seamlessly extract any data we require with ex.get().
-	// Here we acquire some data for our textures.
+	// Here we fetch our font.
+	fontData = ex.get("fonts", "Lato");
+	font.loadFromMemory(fontData.data(), fontData.size());
+
+	// Now let's acquire data for our textures.
 	LoadTexture(texSprite1, ex.get("graphics", "sprite1"));
 	LoadTexture(texSprite2, ex.get("graphics", "sprite2"));
 
@@ -105,8 +102,8 @@ void Demo::Init()
 	// Default is true.
 	unlime->options.integrityCheck = false;
 
-	// checkHeadString makes unlime throw an exception if options.headString does not match.
-	// The head string defined in the datafile.
+	// checkHeadString makes unlime throw an exception if options.headString does not match
+	// the head string defined in the datafile.
 	// Default is false.
 	unlime->options.checkHeadString = true;
 
@@ -142,18 +139,9 @@ void Demo::Run()
 		}
 		// Draw to screen
 		window->clear({ 40, 40, 40, 255 });
-		//window->draw(text1);
+		window->draw(text1);
 		window->draw(sprite1);
 		window->draw(sprite2);
 		window->display();
-	}
-}
-
-void Demo::Unload()
-{
-	if (window)
-	{
-		delete window;
-		window = nullptr;
 	}
 }

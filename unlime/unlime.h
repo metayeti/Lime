@@ -189,12 +189,8 @@ private:
 			throw std::runtime_error(ERROR_DECOMPRESS);
 		}
 
-		/*
-		static const size_t inBuffSize = 16348u;
+		static const size_t inBuffSize = 500u;
 		static const size_t outBuffSize = 16348u;
-		*/
-		static const size_t inBuffSize = 100u;
-		static const size_t outBuffSize = 400u;
 
 		z_stream dcmpStream;
 		dcmpStream.zalloc = Z_NULL;
@@ -419,6 +415,12 @@ public:
 	private:
 		Unlime* unlime = nullptr;
 
+		// prevent copying and moving for this class
+		Extractor(Extractor const&);
+		Extractor& operator=(Extractor const&);
+		Extractor(Extractor&& other);
+		const Extractor& operator=(Extractor&& other);
+
 	public:
 		Extractor(Unlime& context)
 		: unlime(&context)
@@ -429,23 +431,6 @@ public:
 			}
 		}
 
-		/*
-		Extractor(Extractor const& other)
-		: unlime(other.unlime)
-		{
-		}
-		*/
-
-		/*
-		const Extractor operator=(Extractor const& other)
-		{
-			if (this != &other)
-			{
-				unlime = other.unlime;
-			}
-			return *this;
-		}*/
-
 		~Extractor()
 		{
 			if (--unlime->n_extractors == 0)
@@ -454,25 +439,7 @@ public:
 			}
 		}
 
-		/*
-		Extractor(Extractor&& other)
-		{
-			unlime = other.unlime;
-			other.unlime = nullptr;
-		}
-
-		const Extractor& operator=(Extractor&& other)
-		{
-			if (this != &other)
-			{
-				unlime = other.unlime;
-				other.unlime = nullptr;
-			}
-			return *this;
-		}
-		*/
-
-		Unlime::T_Bytes get(std::string const& category, std::string const& key) const
+		bool get(T_Bytes& data, std::string const& category, std::string const& key) const
 		{
 			if (!unlime->wasValidated)
 			{
@@ -482,11 +449,21 @@ public:
 			{
 				unlime->readDict();
 			}
-			T_Bytes data;
-			T_DictItem const& dictItem = unlime->dictMap[category][key];
+			auto it = unlime->dictMap.find(category);
+			if (it == unlime->dictMap.end())
+			{
+				return false;
+			}
+			auto& collection = it->second;
+			auto it2 = collection.find(key);
+			if (it2 == collection.end())
+			{
+				return false;
+			}
+			T_DictItem const& dictItem = it2->second;
 			unlime->datafileStream.seekg(unlime->dataOffset + dictItem.seek_id);
 			unlime->readCompressedStream(data, static_cast<size_t>(dictItem.size), dictItem.checksum);
-			return data;
+			return true;
 		}
 	};
 

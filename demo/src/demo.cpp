@@ -28,42 +28,45 @@
   * 
   */
 
+#include <cmath>
 #include "demo.h"
-#include <fstream>
 
 void Demo::CreateApplicationWindow()
 {
-	window = std::make_unique<sf::RenderWindow>(sf::VideoMode(window_width, window_height), "LimePack Demo", sf::Style::Close);
-	window->setFramerateLimit(60u);
 	const sf::VideoMode videoMode = sf::VideoMode::getDesktopMode();
+	window = std::make_unique<sf::RenderWindow>(sf::VideoMode(window_width, window_height), "LimePack Demo", sf::Style::Close);
 	const int window_x = (videoMode.width - window_width) / 2;
 	const int window_y = (videoMode.height - window_height) / 2;
 	window->setPosition({ window_x, window_y });
+	window->setFramerateLimit(60u);
 }
 
 void Demo::PrepareDemo()
 {
+	// Prepare all on-screen objects.
+
 	text1.setFont(font);
-	//text1.setString("Hello World");
-	text1.setPosition(50, 50);
+	text1.setString(metaName + " v" + metaVersion);
+	text1.setPosition(20, 20);
 	text1.setFillColor(sf::Color::White);
-	text1.setCharacterSize(24);
+	text1.setCharacterSize(18);
+
+	text2.setFont(font);
+	text2.setString(metaImportantInfo);
+	text2.setPosition(20, 46);
+	text2.setFillColor(sf::Color::White);
+	text2.setCharacterSize(18);
 
 	sprite1.setTexture(texSprite1);
 	sprite1.setTextureRect({ 0, 0, 40, 40 });
-	sprite1.setPosition({ 320.f, 200.f });
+	sprite1.setPosition(animStartPos);
 
 	sprite2.setTexture(texSprite2);
 	sprite2.setTextureRect({ 0, 0, 80, 80 });
-	sprite2.setPosition({ 150.f, 100.f });
+	sprite2.setPosition(280.f, 200.f);
 
 	music.setLoop(true);
 	music.play();
-}
-
-void Demo::LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data)
-{
-	texture.loadFromMemory(data.data(), data.size());	
 }
 
 void Demo::ExtractData()
@@ -72,22 +75,31 @@ void Demo::ExtractData()
 	// This opens the datafile.
 	Unlime::Extractor ex(*unlime);
 
-	Unlime::T_Bytes blah = ex.get("@meta", "name");
-	std::string xz((char*)blah.data(), blah.size());
-	text1.setString(xz);
-
 	// Now we can seamlessly extract any data we require with ex.get().
+
+	// Fetch some strings from meta category.
+	LoadResource(metaName, ex, "@meta", "name");
+	LoadResource(metaVersion, ex, "@meta", "version");
+	LoadResource(metaImportantInfo, ex, "@meta", "important info");
+
 	// Here we fetch our font.
-	fontData = ex.get("fonts", "Lato");
-	font.loadFromMemory(fontData.data(), fontData.size());
+	// We need font data to remain in memory the entire time the application is open so
+	// we do it manually rather than calling LoadResource.
+	if (ex.get(fontData, "fonts", "Lato"))
+	{
+		font.loadFromMemory(fontData.data(), fontData.size());
+	}
 
 	// Now let's acquire data for our textures.
-	LoadTexture(texSprite1, ex.get("graphics", "sprite1"));
-	LoadTexture(texSprite2, ex.get("graphics", "sprite2"));
+	LoadResource(texSprite1, ex, "graphics", "sprite1");
+	LoadResource(texSprite2, ex, "graphics", "sprite2");
 
-	// Get music data
-	musicData = ex.get("music", "calm");
-	music.openFromMemory(musicData.data(), musicData.size());
+	// Retreive music data.
+	// Same as with the font, we need data to remain in memory.
+	if (ex.get(musicData, "music", "calm"))
+	{
+		music.openFromMemory(musicData.data(), musicData.size());
+	}
 
 	// The datafile is closed when ex goes out of scope.
 }
@@ -134,7 +146,7 @@ void Demo::Run()
 {
 	while (window->isOpen())
 	{
-		// Process events
+		// Process events.
 		sf::Event e;
 		while (window->pollEvent(e))
 		{
@@ -144,9 +156,18 @@ void Demo::Run()
 				break;
 			}
 		}
-		// Draw to screen
-		window->clear({ 40, 40, 40, 255 });
+
+		// Update logic.
+		animAngle += 0.01f;
+		sprite1.setPosition(
+			cos(animAngle) * (animStartPos.x - animCenterPos.x) - sin(animAngle) * (animStartPos.y - animCenterPos.y) + animCenterPos.x,
+			sin(animAngle) * (animStartPos.x - animCenterPos.x) + cos(animAngle) * (animStartPos.y - animCenterPos.y) + animCenterPos.y
+		);
+
+		// Draw everything to screen.
+		window->clear({ 30, 30, 30, 255 });
 		window->draw(text1);
+		window->draw(text2);
 		window->draw(sprite1);
 		window->draw(sprite2);
 		window->display();

@@ -69,19 +69,48 @@ private:
 	Unlime::T_Bytes musicData; // SFML requires music data to remain in memory
 	sf::Music music;
 
+	// string data from "meta" section in the datafile
+	std::string metaName;
+	std::string metaVersion;
+	std::string metaImportantInfo;
+
 	// on-screen objects
-
 	sf::Text text1;
-
+	sf::Text text2;
 	sf::Sprite sprite1;
 	sf::Sprite sprite2;
+
+	// sprite animation variables
+	const sf::Vector2f animCenterPos = { (window_width - 40) / 2.f, (window_height - 40) / 2.f };
+	const sf::Vector2f animStartPos = { animCenterPos.x - 100.f, animCenterPos.y - 100.f };
+	float animAngle = 0.f;
+
 
 	void CreateApplicationWindow();
 
 	void PrepareDemo();
 
-	///static void LoadFont(sf::Font& font, Unlime::T_Bytes const& data);
-	static void LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data);
+	template<class T>
+	static void LoadResource(T& sfmlObject, Unlime::Extractor const& ex, std::string const& resCategory, std::string const& resKey)
+	{
+		// load a SFML object using an Extractor to retreive data from the datafile
+		Unlime::T_Bytes data;
+		if (ex.get(data, resCategory, resKey))
+		{
+			sfmlObject.loadFromMemory(data.data(), data.size());
+		}
+	}
+
+	template<>
+	static void LoadResource<std::string>(std::string& strObject, Unlime::Extractor const& ex, std::string const& resCategory, std::string const& resKey)
+	{
+		// same as above but for std::string
+		Unlime::T_Bytes data;
+		if (ex.get(data, resCategory, resKey))
+		{
+			strObject = std::string(reinterpret_cast<char*>(data.data()), data.size());
+		}
+	}
 
 	void ExtractData();
 

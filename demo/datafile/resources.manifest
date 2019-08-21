@@ -14,7 +14,7 @@ name = Demo datafile
 version = 1.0
 important info = I like giraffes!
 
-; A (non-meta) section contains a group of keys which point
+; A (non-meta) category contains a group of keys which point
 ; to resource files. Filenames are lost in packing.
 
 ; Names of categories and keys are up to you to decide and are
@@ -30,6 +30,8 @@ Lato = resources/fonts/Lato/Lato-Regular.ttf
 [graphics]
 sprite1 = resources/graphics/sprite1.png
 sprite2 = resources/graphics/sprite2.png
+
+; music files
 
 [music]
 calm = resources/music/calm.ogg

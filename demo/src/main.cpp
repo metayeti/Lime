@@ -28,7 +28,6 @@
   *
   */
 
-//#include <SFML/Graphics.hpp>
 #include "demo.h"
 #include <exception>
 #if defined(_WIN32)

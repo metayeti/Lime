@@ -10,12 +10,12 @@ To create Lime datafiles, build the *Lime* utility in [`/lime/`](/lime/). You ca
 
 To unpack datafiles, copy the source files in [`/unlime/`](/unlime/) into your own project and use the provided classes to extract game data from a Lime datafile.
 
-To build the demo, read the readme and the build instructions in [`/demo/`](/demo/).
+To build the demo, read the build instructions in [`/demo/`](/demo/).
 
 ## Thanks
 
 - [zlib](https://zlib.net/) - used for compression
-- [SFML](https://www.sfml-dev.org/) - used in the demo project
+- [SFML](https://www.sfml-dev.org/) - used for the demo project
 
 ## License
 

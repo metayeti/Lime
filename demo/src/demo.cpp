@@ -56,6 +56,9 @@ void Demo::PrepareDemo()
 	sprite2.setTexture(texSprite2);
 	sprite2.setTextureRect({ 0, 0, 80, 80 });
 	sprite2.setPosition({ 150.f, 100.f });
+
+	music.setLoop(true);
+	music.play();
 }
 
 void Demo::LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data)
@@ -81,6 +84,10 @@ void Demo::ExtractData()
 	// Now let's acquire data for our textures.
 	LoadTexture(texSprite1, ex.get("graphics", "sprite1"));
 	LoadTexture(texSprite2, ex.get("graphics", "sprite2"));
+
+	// Get music data
+	musicData = ex.get("music", "calm");
+	music.openFromMemory(musicData.data(), musicData.size());
 
 	// The datafile is closed when ex goes out of scope.
 }

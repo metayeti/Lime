@@ -30,3 +30,6 @@ Lato = resources/fonts/Lato/Lato-Regular.ttf
 [graphics]
 sprite1 = resources/graphics/sprite1.png
 sprite2 = resources/graphics/sprite2.png
+
+[music]
+calm = resources/music/calm.ogg

@@ -68,7 +68,9 @@
     <PostBuildEvent>
       <Command>copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-system-d-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
 copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-window-d-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
-copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-graphics-d-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\</Command>
+copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-graphics-d-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
+copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-audio-d-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
+copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\openal32.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -93,7 +95,9 @@ copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-graphics-d-2.dll $(Solution
     <PostBuildEvent>
       <Command>copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-system-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
 copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-window-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
-copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-graphics-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\</Command>
+copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-graphics-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
+copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\sfml-audio-2.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\
+copy $(SolutionDir)..\thirdparty\SFML-2.5.1\bin\openal32.dll $(SolutionDir)..\..\demo\bin\x64\$(Configuration)\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

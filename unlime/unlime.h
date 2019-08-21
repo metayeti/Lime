@@ -189,8 +189,12 @@ private:
 			throw std::runtime_error(ERROR_DECOMPRESS);
 		}
 
+		/*
 		static const size_t inBuffSize = 16348u;
 		static const size_t outBuffSize = 16348u;
+		*/
+		static const size_t inBuffSize = 100u;
+		static const size_t outBuffSize = 400u;
 
 		z_stream dcmpStream;
 		dcmpStream.zalloc = Z_NULL;
@@ -221,9 +225,9 @@ private:
 			do {
 				dcmpStream.next_out = &outputBuffer[0];
 				dcmpStream.avail_out = outBuffSize;
-
+				
 				int streamState = inflate(&dcmpStream, Z_NO_FLUSH);
-
+				
 				if (streamState != Z_OK && streamState != Z_STREAM_END)
 				{
 					delete[] outputBuffer;

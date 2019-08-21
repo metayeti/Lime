@@ -34,6 +34,7 @@
 #define LIME_DEMO_H
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <string>
 #include <stdexcept>
 #include <memory>
@@ -64,6 +65,10 @@ private:
 	Unlime::T_Bytes fontData; // SFML requires font data to remain in memory
 	sf::Font font;
 
+	// music loop
+	Unlime::T_Bytes musicData; // SFML requires music data to remain in memory
+	sf::Music music;
+
 	// on-screen objects
 
 	sf::Text text1;
@@ -75,7 +80,7 @@ private:
 
 	void PrepareDemo();
 
-	static void LoadFont(sf::Font& font, Unlime::T_Bytes const& data);
+	///static void LoadFont(sf::Font& font, Unlime::T_Bytes const& data);
 	static void LoadTexture(sf::Texture& texture, Unlime::T_Bytes const& data);
 
 	void ExtractData();

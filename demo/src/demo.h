@@ -101,8 +101,7 @@ private:
 		}
 	}
 
-	template<>
-	static void LoadResource<std::string>(std::string& strObject, Unlime::Extractor const& ex, std::string const& resCategory, std::string const& resKey)
+	static void LoadResource(std::string& strObject, Unlime::Extractor const& ex, std::string const& resCategory, std::string const& resKey)
 	{
 		// same as above but for std::string
 		Unlime::T_Bytes data;

@@ -11,7 +11,7 @@ else
 	CFLAGS := -O3
 endif
 CSTD := c++17
-CLIBS := -lz -lsfml-graphics -lsfml-window -lsfml-system
+CLIBS := -lz -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 CINCLUDE := -I../unlime
 TARGET := bin/$(PROJNAME)
 

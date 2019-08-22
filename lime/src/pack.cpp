@@ -321,7 +321,7 @@ namespace Lime
 
 				auto const& value = it2->second;
 
-				uint32_t checksum;
+				uint32_t checksum = 0u;
 
 				if (isMeta)
 				{
@@ -404,16 +404,6 @@ namespace Lime
 
 					if (resFile)
 					{
-						switch (options.chksum)
-						{
-							case ChkSumOption::ADLER32:
-								checksum = adler32_z(0ul, Z_NULL, 0u);
-								break;
-							case ChkSumOption::CRC32:
-								checksum = crc32_z(0ul, Z_NULL, 0u);
-								break;
-						}
-
 						z_stream cmpStream;
 
 						cmpStream.zalloc = Z_NULL;

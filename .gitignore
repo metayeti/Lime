@@ -10,6 +10,8 @@
 # Visual Studio debug database
 *.pdb
 # ignored folders
-bin/
-obj/
+/lime/bin/
+/lime/obj/
+/demo/bin/
+/demo/obj/
 tmp/

@@ -119,7 +119,7 @@ void Demo::Init()
 	// be thrown in case data corruption is detected.
 	// Set false to skip (skips automatically for datafiles packed with -chksum=none).
 	// Default is true.
-	unlime->options.integrityCheck = false;
+	unlime->options.integrityCheck = true;
 
 	// checkHeadString makes unlime throw an exception if options.headString does not match
 	// the head string defined in the datafile.

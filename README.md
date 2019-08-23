@@ -2,6 +2,8 @@
 
 ![Lime](/lime.png?raw=true)
 
+(0.9.2, __not__ ready for production)
+
 ## Info
 
 LimePack is a set of tools for data and asset packing for C++ game development. It depends on [zlib](https://zlib.net/) for compression.

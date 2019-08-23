@@ -1,0 +1,46 @@
+Lime datafile structure:
+
+            Z0           Z1    ...   Zn
+           [~~~~~~~~~~] [~~~] [~~~] [~~~]      (zipped content)
+
+   header   dictionary   user resources   end
+ |________|____________|________________|_____|
+                |
+                |
+                |
+            dictionary:
+
+            N   category 1   ...   category N
+          |___|____________|     |____________|
+                    |
+                    |
+                    |
+                 category:
+
+                 category key*  M   data 1   ...   data M
+               |______________|___|________|     |________|
+                                      |
+                                      |
+                                      |
+                                    data:
+
+                                    data key*  seek_id+  size+  checksum
+                                  |__________|_________|______|..........|
+
+Header:
+
+   bgn   version*  head*  dict size   dict checksum
+ |_____|_________|______|___________|...............|
+
+All non-resource strings* are stored in the following manner:
+
+   length   string
+ |________|________|
+
+String lengths are stored as 8-bit unsigned integers.
+Numeric values are stored as 32-bit unsigned integers.
+Numeric values marked + are stored as 64-bit unsigned integers.
+
+The type of the checksum function is implicitly defined by the bgn and end
+endpoints in the Lime datafile. Adler32 will use LM> and <LM, CRC32 will
+use LM] and [LM, and a file with no checksums will use LM) and (LM.

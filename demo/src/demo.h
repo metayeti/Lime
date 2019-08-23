@@ -57,11 +57,15 @@ private:
 	// pointer to Unlime
 	std::unique_ptr<Unlime> unlime;
 
-	// demo textures
-	sf::Texture texSprite1;
-	sf::Texture texSprite2;
+	// images
+	sf::Image imgIcon;
 
-	// demo font
+	// textures
+	sf::Texture texBackground;
+	sf::Texture texFlag;
+	sf::Texture texCloud;
+
+	// font
 	Unlime::T_Bytes fontData; // SFML requires font data to remain in memory
 	sf::Font font;
 
@@ -75,16 +79,16 @@ private:
 	std::string metaImportantInfo;
 
 	// on-screen objects
-	sf::Text text1;
-	sf::Text text2;
-	sf::Sprite sprite1;
-	sf::Sprite sprite2;
+	sf::Sprite sprBackground;
+	sf::Sprite sprFlag;
+	sf::Sprite sprCloud;
 
-	// sprite animation variables
-	const sf::Vector2f animCenterPos = { (window_width - 40) / 2.f, (window_height - 40) / 2.f };
-	const sf::Vector2f animStartPos = { animCenterPos.x - 100.f, animCenterPos.y - 100.f };
-	float animAngle = 0.f;
+	sf::Text txtTitle;
 
+	// animation variables
+	float cloudX = 400.f;
+	float flagTimer = 0.f;
+	char flagTile = 0;
 
 	void CreateApplicationWindow();
 

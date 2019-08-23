@@ -8,7 +8,7 @@ LimePack is a set of tools for data and asset packing for C++ game development. 
 
 To create Lime datafiles, build the *Lime* utility in [`/lime/`](/lime/). You can find the build instructions in the build.txt file.
 
-To unpack datafiles, copy the source files in [`/unlime/`](/unlime/) into your own project and use the provided classes to extract game data from a Lime datafile.
+To unpack datafiles, copy the source files in [`/unlime/`](/unlime/) into your own project and use the provided classes to extract game data from a Lime datafile. Don't forget to link [zlib](https://zlib.net/) to your project.
 
 To build the demo, read the build instructions in [`/demo/`](/demo/).
 

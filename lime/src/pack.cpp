@@ -540,8 +540,15 @@ namespace Lime
 
 		for (auto const& it : dictDataMap)
 		{
-			auto const& categoryKey = it.first;
+			auto categoryKey = it.first;
 			auto const& collection = it.second;
+
+			const bool isMeta = (categoryKey.length() && categoryKey[0] == '@');
+
+			if (isMeta)
+			{
+				categoryKey.erase(0, 1);
+			}
 
 			uint8_t categoryKeySize = static_cast<uint8_t>(categoryKey.size());
 			appendBytes(dictBytes, toBytes(toBigEndian(categoryKeySize)));

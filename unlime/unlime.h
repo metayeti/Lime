@@ -40,7 +40,6 @@
 #include <stdexcept>
 #include <fstream>
 #include <cstdint>
-#include <sys/stat.h>
 #include <zlib.h>
 
 class Unlime
@@ -49,7 +48,7 @@ public:
 	using T_Bytes = std::vector<Bytef>;
 
 private:
-	const std::string LIME_VERSION = "0.9.0";
+	const std::string LIME_VERSION = "0.9.2";
 
 	const std::string LM_BGN_ADLER32 = "LM>";
 	const std::string LM_END_ADLER32 = "<LM";
@@ -72,7 +71,7 @@ private:
 		ADLER32, CRC32, NONE
 	};
 
-	const uint64_t minimumDatafileSize = 10;
+	const uint64_t minimumDatafileSize = 36u;
 
 	const std::string datafileFilename;
 
@@ -103,28 +102,11 @@ private:
 
 	size_t n_extractors = 0;
 
-	bool fileExists(const char* filename)
-	{
-		struct stat buff;
-		return !stat(filename, &buff);
-	}
-
-	size_t fileSize(const char* filename)
-	{
-		struct stat buff;
-		stat(filename, &buff);
-		return buff.st_size;
-	}
-
 	void openDatafile()
 	{
 		if (datafileStream.is_open())
 		{
 			return;
-		}
-		if (!fileExists(datafileFilename.c_str()))
-		{
-			throw std::runtime_error("Unable to find file: " + datafileFilename);
 		}
 		datafileStream.open(datafileFilename, std::ios::in | std::ifstream::binary);
 		if (!datafileStream.is_open())
@@ -262,7 +244,7 @@ private:
 		}
 	}
 
-	void validateFormat()
+	void validateAndExtractHeader()
 	{
 		if (!datafileStream.is_open())
 		{
@@ -270,14 +252,15 @@ private:
 		}
 
 		// filesize sanity check
-		totalDatafileSize = fileSize(datafileFilename.c_str());
+		datafileStream.seekg(0, datafileStream.end);
+		totalDatafileSize = datafileStream.tellg();
 		if (totalDatafileSize < minimumDatafileSize)
 		{
 			throw std::runtime_error(ERROR_UNKNOWN_FORMAT);
 		}
 
 		// retreive bgn and end endpoints
-		datafileStream.seekg(0);
+		datafileStream.seekg(0, datafileStream.beg);
 		std::string bgnEndpointStr;
 		readBytesFromStream(bgnEndpointStr, LM_ENDPOINT_LENGTH);
 
@@ -402,6 +385,11 @@ private:
 		}
 	}
 
+	Unlime(Unlime const&);
+	Unlime& operator=(Unlime const&);
+	Unlime(Unlime&& other);
+	const Unlime& operator=(Unlime&& other);
+
 public:
 	struct Options
 	{
@@ -415,7 +403,6 @@ public:
 	private:
 		Unlime* unlime = nullptr;
 
-		// prevent copying and moving for this class
 		Extractor(Extractor const&);
 		Extractor& operator=(Extractor const&);
 		Extractor(Extractor&& other);
@@ -443,7 +430,7 @@ public:
 		{
 			if (!unlime->wasValidated)
 			{
-				unlime->validateFormat();
+				unlime->validateAndExtractHeader();
 			}
 			if (!unlime->dictWasRead)
 			{
@@ -470,6 +457,13 @@ public:
 	Unlime(std::string const& filename)
 	: datafileFilename(filename)
 	{
+	}
+
+	void dropDict()
+	{
+		dictMap.clear();
+		wasValidated = false;
+		dictWasRead = false;
 	}
 };
 

@@ -48,7 +48,7 @@ public:
 	using T_Bytes = std::vector<Bytef>;
 
 private:
-	const std::string LIME_VERSION = "0.9.2";
+	const std::string LIME_VERSION = "0.9.3";
 
 	const std::string LM_BGN_ADLER32 = "LM>";
 	const std::string LM_END_ADLER32 = "<LM";

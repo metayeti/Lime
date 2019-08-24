@@ -126,8 +126,8 @@ namespace Lime
 
 	size_t fileSize(const char* filename)
 	{
-		struct stat buff;
-		stat(filename, &buff);
+		struct __stat64 buff;
+		__stat64(filename, &buff);
 		return buff.st_size;
 	}
 
@@ -328,7 +328,8 @@ namespace Lime
 					// meta category, store value directly
 					auto const& data = value;
 
-					const size_t offset = ftell(outFile);
+					//const size_t offset = ftell(outFile);
+					const size_t offset = _ftelli64(outFile);
 
 					uLong dataBytesCompressedSize = compressBound(static_cast<uLong>(data.size()));
 					Bytef* dataBytesCompressedData = new Bytef[dataBytesCompressedSize];
@@ -384,7 +385,8 @@ namespace Lime
 					size_t totalWritten = 0u;
 
 					// store current offset
-					const size_t offset = ftell(outFile);
+					//const size_t offset = ftell(outFile);
+					const size_t offset = _ftelli64(outFile);
 					dictDataMap[category][key] = { filenameOffsetMap[resFilename] = offset };
 
 					// pack data from file

@@ -206,10 +206,7 @@ int main(int argc, char* argv[])
 					<< " |________|________|\n\n"
 					<< "String lengths are stored as 8-bit unsigned integers.\n"
 					<< "Numeric values are stored as 32-bit unsigned integers.\n"
-					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n\n"
-					<< "The bgn and end endpoints define the type of checksum function used\n"
-					<< "in the Lime datafile. Adler32 will use LM> and <LM, CRC32 will use\n"
-					<< "LM] and [LM, and a file with no checksums will use LM) and (LM.\n";
+					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n";
 			}
 			else if (helpTopic == "manifest") {
 				inf
@@ -241,8 +238,8 @@ int main(int argc, char* argv[])
 			else if (helpTopic == "clevel") {
 				inf
 					<< "The clevel option is used to select the level of compression. Higher levels\n"
-					<< "compress more but decompression takes more CPU time, so it is essentially a\n"
-					<< "tradeoff between time and file size. To disable compression altogether,\n"
+					<< "compress more but (de)compression takes more CPU time, so it is essentially\n"
+					<< "a tradeoff between time and file size. To disable compression altogether,\n"
 					<< "set clevel to 0. Default level is 9 which is the highest compression level.\n\n"
 					<< "Usage: -clevel=[0..9]\n\n"
 					<< "Examples:\n\n"

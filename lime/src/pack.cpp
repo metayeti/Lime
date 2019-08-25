@@ -362,14 +362,10 @@ namespace Lime
 			// dict size placeholder
 			datafileStream.write(reinterpret_cast<const char*>(dictPlaceholderBytes.data()), dictPlaceholderBytes.size());
 			// dict checksum placeholder
-			datafileStream.write(reinterpret_cast<const char*>(dictPlaceholderBytes.data()), dictPlaceholderBytes.size());
-		}
-
-		// placeholder for dict checksum
-		if (options.chksum != ChkSumOption::NONE)
-		{
-			T_Bytes dictChecksumBytes = toBytes<uint32_t>(0u);
-			datafileStream.write(reinterpret_cast<const char*>(dictChecksumBytes.data()), dictChecksumBytes.size());
+			if (options.chksum != ChkSumOption::NONE)
+			{
+				datafileStream.write(reinterpret_cast<const char*>(dictPlaceholderBytes.data()), dictPlaceholderBytes.size());
+			}
 		}
 
 		// pack user resources
@@ -381,7 +377,7 @@ namespace Lime
 		};
 
 		DMap<DMap<DictItemData>> dictDataMap;
-		std::unordered_map<std::string, size_t> filenameOffsetMap; // used for detecting duplicates
+		std::unordered_map<std::string, DictItemData const*> knownFilenameMap; // used for detecting duplicates
 
 		static const size_t inBuffSize = 512u;
 		static const size_t outBuffSize = 16348u;
@@ -441,22 +437,25 @@ namespace Lime
 				else
 				{
 #if defined(_WIN32)
-					auto resFilename = value;
+					std::string resFilename = value;
 					// on windows we can safely lowercase the filename so we don't end up with duplicate data
 					// due to mismatched case
 					std::transform(resFilename.begin(), resFilename.end(), resFilename.begin(), ::tolower);
 #else
 					std::string const& resFilename = value;
 #endif
-					auto knownOffsetIt = filenameOffsetMap.find(resFilename);
-					if (knownOffsetIt != filenameOffsetMap.end())
+					DictItemData& itemData = dictDataMap[category][key];
+
+					auto knownFilenameIt = knownFilenameMap.find(resFilename);
+					if (knownFilenameIt != knownFilenameMap.end())
 					{
 						// we already packed this file
 						// simply reference the same item and skip packing for this item
-						auto& dataItem = dictDataMap[category][key];
-						dataItem = { knownOffsetIt->second, dataItem.checksum, dataItem.size };
+						itemData = *knownFilenameIt->second;
 						continue;
 					}
+
+					knownFilenameMap[resFilename] = &itemData;
 
 					size_t totalWritten = 0u;
 
@@ -544,7 +543,7 @@ namespace Lime
 					totalRead += numReadTotal;
 
 					// store offset, checksum and size
-					dictDataMap[category][key] = { offset, checksum, totalWritten };
+					itemData = { offset, checksum, totalWritten };
 				}
 			}
 		}
@@ -641,6 +640,7 @@ namespace Lime
 			T_Bytes dictSizeBytes = toBytes(toBigEndian(dictSize));
 			datafileStream.write(reinterpret_cast<const char*>(dictSizeBytes.data()), dictSizeBytes.size());
 		}
+		if (options.chksum != ChkSumOption::NONE)
 		{
 			T_Bytes dictChecksumBytes = toBytes(toBigEndian(dictChecksum));
 			datafileStream.write(reinterpret_cast<const char*>(dictChecksumBytes.data()), dictChecksumBytes.size());

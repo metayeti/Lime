@@ -14,4 +14,4 @@ To build the Demo project:
   Select the configuration you want to use (for example Release / x64) and build
   the Demo project.
 
-  Binary should appear in \demo\bin\[x86|x64]\[Debug|Release].
+  Binary should appear in \demo\bin\x64\[Debug|Release].

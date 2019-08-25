@@ -2,11 +2,11 @@
 
 ![Lime](/lime.png?raw=true)
 
-(0.9.3, __not__ battle tested and most likely __not__ ready for production)
+(0.9.4, __not__ battle tested and most likely __not__ ready for production)
 
 ## Info
 
-LimePack is a set of tools for data and asset packing for C++ game development. It depends on [zlib](https://zlib.net/) for compression.
+LimePack is a set of tools for data and asset packing intended for C++ game development. It depends on [zlib](https://zlib.net/) for compression.
 
 To create Lime datafiles, build the *Lime* utility in [`/lime/`](/lime/). You can find the build instructions in the build.txt file.
 
@@ -14,7 +14,9 @@ To unpack datafiles, copy the source file in [`/unlime/`](/unlime/) into your ow
 
 To build the demo, read the build instructions in [`/demo/`](/demo/).
 
-Ideally used for small datafiles but large datafiles (2GB and beyond) are supported. Even with big datafiles, unpacking should be fast but packing can take a while as this implementation writes compressed data into a temporary file first and then writes that compressed data into the datafile. If you're dealing with enormous sets of data, consider using another format.
+## Notes
+
+Ideally, Lime is used for small datafiles but large datafiles (2GB and beyond) are supported. Packing enormous (individual) resource files is not recommended as Unlime expands each queried resource fully into memory (streaming is not supported). Packing lots of small resources is fine but packing may take a while when using compression. If dealing with large datafiles, it is recommended to turn off compression until deployment.
 
 ## Thanks
 

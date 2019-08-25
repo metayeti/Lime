@@ -179,37 +179,37 @@ int main(int argc, char* argv[])
 			else if (helpTopic == "structure") {
 				inf
 					<< "Lime datafile structure:\n\n"
-					<< "            Z0           Z1    ...   Zn\n"
-					<< "           [~~~~~~~~~~] [~~~] [~~~] [~~~]      (zipped content)\n\n"
-					<< "   header   dictionary   user resources   end\n"
-					<< " |________|____________|________________|_____|\n"
-					<< "                |\n"
-					<< "                |\n"
-					<< "                |\n"
-					<< "            dictionary:\n\n"
-					<< "            N   category 1   ...   category N\n"
-					<< "          |___|____________|     |____________|\n"
-					<< "                    |\n"
-					<< "                    |\n"
-					<< "                    |\n"
-					<< "                 category:\n\n"
-					<< "                 category key*  M   data 1   ...   data M\n"
-					<< "               |______________|___|________|     |________|\n"
-					<< "                                      |\n"
-					<< "                                      |\n"
-					<< "                                      |\n"
-					<< "                                    data:\n\n"
-					<< "                                    data key*  seek_id+  size+  checksum\n"
-					<< "                                  |__________|_________|______|..........|\n\n"
-					<< "Header:\n\n"
+					<< "           Z1    ...   Zn    Zdict\n"
+					<< "          [~~~] [~~~] [~~~] [~~~~~~~~~~]       (zipped content)\n\n"
+					<< "   header   user resources   dictionary   end\n"
+					<< " |________|________________|____________|_____|\n\n\n"
+					<< "   Header:\n\n"
 					<< "   bgn   version*  head*  dict size   dict checksum\n"
-					<< " |_____|_________|______|___________|...............|\n\n"
+					<< " |_____|_________|______|___________|...............|\n\n\n"
+					<< "   Dictionary:\n\n"
+					<< "   N   category 1   ...   category N\n"
+					<< " |___|____________|     |____________|\n"
+					<< "            |\n"
+					<< "            |\n"
+					<< "            |\n"
+					<< "         Category:\n\n"
+					<< "         category key*  M   data 1   ...   data M\n"
+					<< "       |______________|___|________|     |________|\n"
+					<< "                              |\n"
+					<< "                              |\n"
+					<< "                              |\n"
+					<< "                            Data:\n\n"
+					<< "                            data key*  seek_id+  size+  checksum\n"
+					<< "                          |__________|_________|______|..........|\n\n\n"
 					<< "All non-resource strings* are stored in the following manner:\n\n"
 					<< "   length   string\n"
 					<< " |________|________|\n\n"
 					<< "String lengths are stored as 8-bit unsigned integers.\n"
 					<< "Numeric values are stored as 32-bit unsigned integers.\n"
-					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n";
+					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n\n"
+					<< "The bgn and end endpoints define the type of checksum function used\n"
+					<< "in the Lime datafile. Adler32 will use LM> and <LM, CRC32 will use\n"
+					<< "LM] and [LM, and a file with no checksums will use LM) and (LM.\n";
 			}
 			else if (helpTopic == "manifest") {
 				inf
@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
 	{
 		printHeader(inf);
 		printUsage(inf, execName);
-		inf << "Use " << execName << " --help for more information.\n";
+		inf << "Use " << execName << " --help (or " << execName << " -h) for more information.\n";
 	}
 
 	inf << Lime::Interface::Color::DEFAULT;

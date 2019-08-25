@@ -53,7 +53,7 @@ namespace Lime
 		std::string headstr;
 	};
 
-	void pack(Interface& inf, Dict& resourceDict, std::string const& outputFilename, PackOptions& options);
+	void pack(Interface& inf, Dict const& resourceDict, std::string const& outputFilename, PackOptions& options);
 }
 
 #endif // LIME_PACK_H_

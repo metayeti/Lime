@@ -48,7 +48,7 @@ public:
 	using T_Bytes = std::vector<Bytef>;
 
 private:
-	const std::string LIME_VERSION = "0.9.3";
+	const std::string LIME_VERSION = "0.9.4";
 
 	const std::string LM_BGN_ADLER32 = "LM>";
 	const std::string LM_END_ADLER32 = "<LM";
@@ -92,9 +92,9 @@ private:
 	DatafileChecksumFunc chksumFunc = DatafileChecksumFunc::ADLER32;
 
 	uint32_t dictSize = 0;
-	uint32_t dictOffset = 0;
 	uint32_t dictChecksum = 0;
-	uint64_t dataOffset = 0;
+	uint64_t dictOffset = 0;
+	//uint64_t dataOffset = 0;
 
 	bool wasValidated = false;
 
@@ -328,8 +328,8 @@ private:
 		}
 
 		// calculate offsets
-		dictOffset = static_cast<uint32_t>(datafileStream.tellg());
-		dataOffset = static_cast<uint64_t>(dictSize) + static_cast<uint64_t>(dictOffset);
+		dictOffset = totalDatafileSize - dictSize - LM_ENDPOINT_LENGTH;
+		//dataOffset = static_cast<uint64_t>(dictSize) + static_cast<uint64_t>(dictOffset);
 
 		// validation complete
 		wasValidated = true;
@@ -344,7 +344,9 @@ private:
 
 		dictMap.clear();
 
-		datafileStream.seekg(dictOffset);
+		//datafileStream.seekg(-(static_cast<int>(dictSize + LM_ENDPOINT_LENGTH)), datafileStream.end);
+		datafileStream.seekg(dictOffset, datafileStream.beg);
+
 		T_Bytes dictBytes;
 		readCompressedStream(dictBytes, dictSize, dictChecksum);
 
@@ -448,7 +450,7 @@ public:
 				return false;
 			}
 			T_DictItem const& dictItem = it2->second;
-			unlime->datafileStream.seekg(unlime->dataOffset + dictItem.seek_id);
+			unlime->datafileStream.seekg(dictItem.seek_id);
 			unlime->readCompressedStream(data, static_cast<size_t>(dictItem.size), dictItem.checksum);
 			return true;
 		}

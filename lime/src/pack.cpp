@@ -37,7 +37,7 @@
 #include <utility>
 #include <iterator>
 #include <sys/stat.h>
-#include <cstdio>
+#include <fstream>
 #include <cstdint>
 #include <stdexcept>
 #include <zlib.h>
@@ -222,43 +222,45 @@ namespace Lime
 		}
 	}
 
-	void pack(Interface& inf, Dict& dict, std::string const& outputFilename, PackOptions& options)
+	void pack(Interface& inf, Dict const& dict, std::string const& outputFilename, PackOptions& options)
 	{
 		/*
 
 		Lime datafile structure:
 
-		            Z0           Z1    ...   Zn
-		           [~~~~~~~~~~] [~~~] [~~~] [~~~]      (zipped content)
 
-		   header   dictionary   user resources   end
-		 |________|____________|________________|_____|
-		                |
-		                |
-		                |
-		            dictionary:
+		           Z1    ...   Zn    Zdict
+		          [~~~] [~~~] [~~~] [~~~~~~~~~~]       (zipped content)
 
-		            N   category 1   ...   category N
-		          |___|____________|     |____________|
-		                    |
-		                    |
-		                    |
-		                 category:
+		   header   user resources   dictionary   end
+		 |________|________________|____________|_____|
 
-		                 category key*  M   data 1   ...   data M
-		               |______________|___|________|     |________|
-		                                      |
-		                                      |
-		                                      |
-		                                    data:
 
-		                                    data key*  seek_id+  size+  checksum
-		                                  |__________|_________|______|..........|
-
-		Header:
+		   Header:
 
 		   bgn   version*  head*  dict size   dict checksum
 		 |_____|_________|______|___________|...............|
+
+
+		   Dictionary:
+
+		   N   category 1   ...   category N
+		 |___|____________|     |____________|
+		            |
+		            |
+		            |
+		         Category:
+
+		         category key*  M   data 1   ...   data M
+		       |______________|___|________|     |________|
+		                              |
+		                              |
+		                              |
+		                            Data:
+
+		                            data key*  seek_id+  size+  checksum
+		                          |__________|_________|______|..........|
+
 
 		All non-resource strings* are stored in the following manner:
 
@@ -283,6 +285,32 @@ namespace Lime
 		// print options info
 		printOptionsInfo(inf, options);
 
+		// prepare bgn and end endpoints
+		std::string const* bgnEndpoint = nullptr;
+		std::string const* endEndpoint = nullptr;
+
+		switch (options.chksum)
+		{
+			case ChkSumOption::ADLER32:
+				bgnEndpoint = &LM_BGN_ADLER32;
+				endEndpoint = &LM_END_ADLER32;
+				break;
+			case ChkSumOption::CRC32:
+				bgnEndpoint = &LM_BGN_CRC32;
+				endEndpoint = &LM_END_CRC32;
+				break;
+			case ChkSumOption::NONE:
+				bgnEndpoint = &LM_BGN_NOCHKSUM;
+				endEndpoint = &LM_END_NOCHKSUM;
+				break;
+		}
+
+		// prepare header data
+		const std::string* limeVersion = &LIME_VERSION;
+		const std::string* headString = &options.headstr;
+
+		size_t dictPlaceholderOffset = 0u;
+
 		//
 		// pack data
 		//
@@ -291,6 +319,61 @@ namespace Lime
 
 		size_t totalRead = 0;
 
+		std::ofstream datafileStream(outputFilename, std::ios::out | std::ofstream::binary);
+
+		if (!datafileStream.is_open())
+		{
+			// abort packing
+			throw std::runtime_error("Unable to open file for writing: " + outputFilename);
+		}
+
+		// bgn endpoint
+		if (bgnEndpoint)
+		{
+			datafileStream.write(bgnEndpoint->data(), bgnEndpoint->size());
+		}
+
+		// version length
+		{
+			uint8_t versionLength = static_cast<uint8_t>(limeVersion->size());
+			T_Bytes versionLengthBytes = toBytes(toBigEndian(versionLength));
+			datafileStream.write(reinterpret_cast<const char*>(versionLengthBytes.data()), versionLengthBytes.size());
+		}
+
+		// version string
+		datafileStream.write(reinterpret_cast<const char*>(limeVersion->data()), limeVersion->size());
+
+		// head length
+		{
+			uint8_t headLength = static_cast<uint8_t>(headString->size());
+			T_Bytes headLengthBytes = toBytes(toBigEndian(headLength));
+			datafileStream.write(reinterpret_cast<const char*>(headLengthBytes.data()), headLengthBytes.size());
+		}
+
+		// head string
+		datafileStream.write(reinterpret_cast<const char*>(headString->data()), headString->size());
+
+		// write placeholders for header dict information
+		// these will get overwritten in the last step when we have the full dict compiled
+		{
+			// memorize the offset
+			dictPlaceholderOffset = datafileStream.tellp();
+			// both values are 32-bit uint
+			T_Bytes dictPlaceholderBytes = toBytes<uint32_t>(0u);
+			// dict size placeholder
+			datafileStream.write(reinterpret_cast<const char*>(dictPlaceholderBytes.data()), dictPlaceholderBytes.size());
+			// dict checksum placeholders
+			datafileStream.write(reinterpret_cast<const char*>(dictPlaceholderBytes.data()), dictPlaceholderBytes.size());
+		}
+
+		// placeholder for dict checksum
+		if (options.chksum != ChkSumOption::NONE)
+		{
+			T_Bytes dictChecksumBytes = toBytes<uint32_t>(0u);
+			datafileStream.write(reinterpret_cast<const char*>(dictChecksumBytes.data()), dictChecksumBytes.size());
+		}
+
+		// pack user resources
 		struct DictItemData
 		{
 			size_t offset = 0;
@@ -299,22 +382,13 @@ namespace Lime
 		};
 
 		DMap<DMap<DictItemData>> dictDataMap;
-
 		std::unordered_map<std::string, size_t> filenameOffsetMap; // used for detecting duplicates
 
-		// first pack a temporary user data file
-		std::string tmpDataFilename = "~" + outputFilename;
+		static const size_t inBuffSize = 512u;
+		static const size_t outBuffSize = 16348u;
 
-		FILE* outFile;
-
-#if defined(_WIN32)
-		if (fopen_s(&outFile, tmpDataFilename.c_str(), "wb") != 0)
-#else
-		if ((outFile = fopen(tmpDataFilename.c_str(), "wb")) == nullptr)
-#endif
-		{
-			throw std::runtime_error("Unable to open temporary file: " + tmpDataFilename);
-		}
+		Bytef* inputBuffer = new Bytef[inBuffSize];
+		Bytef* outputBuffer = new Bytef[outBuffSize];
 
 		for (auto it = dict.begin(); it != dict.end(); ++it)
 		{
@@ -336,30 +410,19 @@ namespace Lime
 				if (isMeta)
 				{
 					// meta category, store value directly
-					auto const& data = value;
+					std::string const& data = value;
 
-#if defined(_WIN32)
-					const size_t offset = _ftelli64(outFile);
-#else
-					const size_t offset = ftello64(outFile);
-#endif
+					const size_t offset = datafileStream.tellp();
 
 					uLong dataBytesCompressedSize = compressBound(static_cast<uLong>(data.size()));
 					Bytef* dataBytesCompressedData = new Bytef[dataBytesCompressedSize];
 					if (compress2(dataBytesCompressedData, &dataBytesCompressedSize, (const Bytef*)data.data(), static_cast<uLong>(data.size()), options.clevel) != Z_OK)
 					{
 						// abort packing
-						fclose(outFile);
-						std::remove(tmpDataFilename.c_str());
 						throw std::runtime_error("Unable to compress data.");
 					}
 
-					if (fwrite(dataBytesCompressedData, 1u, dataBytesCompressedSize, outFile) != dataBytesCompressedSize)
-					{
-						fclose(outFile);
-						std::remove(tmpDataFilename.c_str());
-						throw std::runtime_error("Unable to write to file: " + tmpDataFilename);
-					}
+					datafileStream.write(reinterpret_cast<const char*>(dataBytesCompressedData), dataBytesCompressedSize);
 
 					totalRead += data.size();
 
@@ -374,7 +437,7 @@ namespace Lime
 					}
 
 					// store offset, checksum and size
-					dictDataMap[category][key] = { offset, checksum, static_cast<uint8_t>(dataBytesCompressedSize) };
+					dictDataMap[category][key] = { offset, checksum, static_cast<size_t>(dataBytesCompressedSize) };
 				}
 				else
 				{
@@ -384,171 +447,110 @@ namespace Lime
 					// due to mismatched case
 					std::transform(resFilename.begin(), resFilename.end(), resFilename.begin(), ::tolower);
 #else
-					auto const& resFilename = value;
+					std::string const& resFilename = value;
 #endif
-					auto filenameOffsetIt = filenameOffsetMap.find(resFilename);
-					if (filenameOffsetIt != filenameOffsetMap.end())
+					auto knownOffsetIt = filenameOffsetMap.find(resFilename);
+					if (knownOffsetIt != filenameOffsetMap.end())
 					{
-						// we already packed this file so simply reference the same item and skip packing again
+						// we already packed this file
+						// simply reference the same item and skip packing for this item
 						auto& dataItem = dictDataMap[category][key];
-						dataItem = { filenameOffsetIt->second, dataItem.checksum, dataItem.size };
+						dataItem = { knownOffsetIt->second, dataItem.checksum, dataItem.size };
 						continue;
 					}
-					
+
 					size_t totalWritten = 0u;
 
-					// store current offset
-#if defined(_WIN32)
-					const size_t offset = _ftelli64(outFile);
-#else
-					const size_t offset = ftello64(outFile);
-#endif
-					dictDataMap[category][key] = { filenameOffsetMap[resFilename] = offset };
+					// get current offset
+					const size_t offset = datafileStream.tellp();
 
-					// pack data from file
-					const size_t resFileSize = fileSize(resFilename.c_str());
-					FILE* resFile;
-#if defined(_WIN32)
-					if (fopen_s(&resFile, resFilename.c_str(), "rb") != 0)
-#else
-					if ((resFile = fopen(resFilename.c_str(), "rb")) == nullptr)
-#endif
+					// pack data from resource file
+					std::ifstream resourceStream(resFilename, std::ios::in | std::ifstream::binary);
+
+					if (!resourceStream.is_open())
 					{
-						// abort packing
-						fclose(outFile);
-						std::remove(tmpDataFilename.c_str());
 						throw std::runtime_error("Unable to open file: " + resFilename);
 					}
 
-					if (resFile)
+					z_stream cmpStream;
+					cmpStream.zalloc = Z_NULL;
+					cmpStream.zfree = Z_NULL;
+					cmpStream.opaque = Z_NULL;
+
+					if (deflateInit(&cmpStream, options.clevel) != Z_OK)
 					{
-						z_stream cmpStream;
+						throw std::runtime_error("Unable to compress data.");
+					}
 
-						cmpStream.zalloc = Z_NULL;
-						cmpStream.zfree = Z_NULL;
-						cmpStream.opaque = Z_NULL;
+					size_t numRead = 0;
+					size_t numReadTotal = 0;
 
-						if (deflateInit(&cmpStream, options.clevel) != Z_OK)
-						{
-							fclose(outFile);
-							std::remove(tmpDataFilename.c_str());
-							throw std::runtime_error("Unable to compress data.");
-						}
+					bool isEof = false;
 
-						static const size_t inBuffSize = 16348u;
-						static const size_t outBuffSize = 16348u;
+					do {
+						resourceStream.read(reinterpret_cast<char*>(inputBuffer), inBuffSize);
 
-						Bytef* inputBuffer = new Bytef[inBuffSize];
-						size_t numRead = 0;
-						size_t numReadTotal = 0;
+						numRead = resourceStream.gcount();
+						numReadTotal += numRead;
 
-						Bytef* outputBuffer = new Bytef[outBuffSize];
+						isEof = resourceStream.eof();
 
-#if defined(_WIN32)
-						while ((numRead = fread_s(inputBuffer, inBuffSize, 1, inBuffSize, resFile)) > 0)
-#else
-						while ((numRead = fread(inputBuffer, 1, inBuffSize, resFile)) > 0)
-#endif
-						{
-							numReadTotal += numRead;
+						cmpStream.next_in = &inputBuffer[0];
+						cmpStream.avail_in = static_cast<uInt>(numRead);
 
-							cmpStream.next_in = &inputBuffer[0];
-							cmpStream.avail_in = static_cast<uInt>(numRead);
+						const int flush = isEof ? Z_FINISH : Z_NO_FLUSH;
 
-							int flush = feof(resFile) ? Z_FINISH : Z_NO_FLUSH;
+						do {
+							cmpStream.next_out = &outputBuffer[0];
+							cmpStream.avail_out = outBuffSize;
 
-							do {
-								cmpStream.next_out = &outputBuffer[0];
-								cmpStream.avail_out = outBuffSize;
+							int streamState = deflate(&cmpStream, flush);
 
-								int streamState = deflate(&cmpStream, flush);
-								
-								if (streamState == Z_STREAM_ERROR)
-								{
-									delete[] inputBuffer;
-									delete[] outputBuffer;
-									fclose(resFile);
-									fclose(outFile);
-									std::remove(tmpDataFilename.c_str());
-									throw std::runtime_error("Unable to compress data.");
-								}
-
-								size_t compressedChunkSize = outBuffSize - cmpStream.avail_out;
-
-								if (fwrite(outputBuffer, 1u, compressedChunkSize, outFile) != compressedChunkSize)
-								{
-									delete[] inputBuffer;
-									delete[] outputBuffer;
-									fclose(resFile);
-									fclose(outFile);
-									std::remove(tmpDataFilename.c_str());
-									throw std::runtime_error("Unable to compress data.");
-								}
-
-								totalWritten += compressedChunkSize;
-
-							} while (cmpStream.avail_out == 0);
-							
-							switch (options.chksum)
+							if (streamState == Z_STREAM_ERROR)
 							{
-								case ChkSumOption::ADLER32:
-									checksum = adler32_z(checksum, inputBuffer, numRead);
-									break;
-								case ChkSumOption::CRC32:
-									checksum = crc32_z(checksum, inputBuffer, numRead);
-									break;
+								delete[] inputBuffer;
+								delete[] outputBuffer;
+								throw std::runtime_error("Unable to compress data.");
 							}
+
+							const size_t compressedChunkSize = outBuffSize - cmpStream.avail_out;
+
+							datafileStream.write(reinterpret_cast<const char*>(outputBuffer), compressedChunkSize);
+
+							totalWritten += compressedChunkSize;
+
+						} while (cmpStream.avail_out == 0);
+
+						switch (options.chksum)
+						{
+							case ChkSumOption::ADLER32:
+								checksum = adler32_z(checksum, inputBuffer, numRead);
+								break;
+							case ChkSumOption::CRC32:
+								checksum = crc32_z(checksum, inputBuffer, numRead);
+								break;
 						}
 
-						fclose(resFile);
+					} while (!isEof);
+
+					resourceStream.close();
+
+					if (deflateEnd(&cmpStream) != Z_OK)
+					{
 						delete[] inputBuffer;
 						delete[] outputBuffer;
-
-						auto& dataItem = dictDataMap[category][key];
-
-						// update checksum
-						dataItem.checksum = checksum;
-
-						// update size
-						dataItem.size = totalWritten;
-
-						if (deflateEnd(&cmpStream) != Z_OK)
-						{
-							fclose(outFile);
-							std::remove(tmpDataFilename.c_str());
-							throw std::runtime_error("Unable to compress data.");
-						}
-
-						totalRead += numReadTotal;
-
-						if (resFileSize != numReadTotal)
-						{
-							// sizes don't match - something isn't right
-							// abort packing
-							///gzclose(outFile);
-							fclose(outFile);
-							std::remove(tmpDataFilename.c_str());
-							throw std::runtime_error("Unable to process file: " + resFilename);
-						}
+						throw std::runtime_error("Unable to compress data.");
 					}
-					else
-					{
-						// abort packing
-						///gzclose(outFile);
-						fclose(outFile);
-						std::remove(tmpDataFilename.c_str());
-						throw std::runtime_error("Unable to read from file: " + resFilename);
-					}
+
+					totalRead += numReadTotal;
+
+					// store offset, checksum and size
+					dictDataMap[category][key] = { offset, checksum, totalWritten };
 				}
 			}
 		}
-
-		// close the stream
-		///gzclose(outFile);
-		fclose(outFile);
-
-		// get total compressed data size
-		const uint64_t dataSize = fileSize(tmpDataFilename.c_str());
+		delete[] inputBuffer;
+		delete[] outputBuffer;
 
 		// create the dictionary binary
 		T_Bytes dictBytes;
@@ -617,7 +619,6 @@ namespace Lime
 		
 		if (compress2(dictBytesCompressedData, &dictBytesCompressedSize, dictBytes.data(), static_cast<uLong>(dictBytes.size()), options.clevel) != Z_OK)
 		{
-			std::remove(tmpDataFilename.c_str());
 			delete[] dictBytesCompressedData;
 			throw std::runtime_error("Unable to compress dictionary.");
 		}
@@ -625,173 +626,34 @@ namespace Lime
 		// we can now dispose of uncompressed dict bytes
 		dictBytes.clear();
 
-		// prepare bgn and end endpoints
-		const std::string* bgnEndpoint = nullptr;
-		const std::string* endEndpoint = nullptr;
+		// write dictionary
+		datafileStream.write(reinterpret_cast<const char*>(dictBytesCompressedData), static_cast<size_t>(dictBytesCompressedSize));
 
-		switch (options.chksum)
+		// end endpoint
+		if (endEndpoint)
 		{
-			case ChkSumOption::ADLER32:
-				bgnEndpoint = &LM_BGN_ADLER32;
-				endEndpoint = &LM_END_ADLER32;
-				break;
-			case ChkSumOption::CRC32:
-				bgnEndpoint = &LM_BGN_CRC32;
-				endEndpoint = &LM_END_CRC32;
-				break;
-			case ChkSumOption::NONE:
-				bgnEndpoint = &LM_BGN_NOCHKSUM;
-				endEndpoint = &LM_END_NOCHKSUM;
-				break;
+			datafileStream.write(endEndpoint->data(), endEndpoint->size());
 		}
 
-		// prepare header data
-		const std::string* limeVersion = &LIME_VERSION;
-		const std::string* headString = &options.headstr;
-
-		// write to datafile
-
-		FILE* dataFile;
-#if defined(_WIN32)
-		if (fopen_s(&dataFile, outputFilename.c_str(), "wb") != 0)
-#else
-		if ((dataFile = fopen(outputFilename.c_str(), "wb")) == nullptr)
-#endif
+		// write dictionary data to header
+		datafileStream.seekp(dictPlaceholderOffset);
 		{
-			// abort packing
-			std::remove(tmpDataFilename.c_str());
-			delete[] dictBytesCompressedData;
-			throw std::runtime_error("Unable to open file for writing: " + outputFilename);
-		}
-
-		if (dataFile)
-		{
-			// bgn endpoint
-			if (bgnEndpoint && fwrite(bgnEndpoint->data(), 1u, bgnEndpoint->size(), dataFile) != bgnEndpoint->size())
-			{
-				goto error;
-			}
-
-			// version length
-			uint8_t versionLength = static_cast<uint8_t>(limeVersion->size());
-			T_Bytes versionLengthBytes = toBytes(toBigEndian(versionLength));
-			if (fwrite(versionLengthBytes.data(), 1u, versionLengthBytes.size(), dataFile) != versionLengthBytes.size())
-			{
-				goto error;
-			}
-
-			// version string
-			if (fwrite(limeVersion->data(), 1u, limeVersion->size(), dataFile) != limeVersion->size())
-			{
-				goto error;
-			}
-
-			// head length
-			uint8_t headLength = static_cast<uint8_t>(headString->size());
-			T_Bytes headLengthBytes = toBytes(toBigEndian(headLength));
-			if (fwrite(headLengthBytes.data(), 1u, headLengthBytes.size(), dataFile) != headLengthBytes.size())
-			{
-				goto error;
-			}
-
-			// head string
-			if (fwrite(headString->data(), 1u, headString->size(), dataFile) != headString->size())
-			{
-				goto error;
-			}
-
-			// dict size
-			uint32_t dictSize = static_cast<uint32_t>(dictBytesCompressedSize);
+			const uint32_t dictSize = static_cast<uint32_t>(dictBytesCompressedSize);
 			T_Bytes dictSizeBytes = toBytes(toBigEndian(dictSize));
-			if (fwrite(dictSizeBytes.data(), 1u, dictSizeBytes.size(), dataFile) != dictSizeBytes.size())
-			{
-				goto error;
-			}
-
-			// dict checksum
-			if (options.chksum != ChkSumOption::NONE)
-			{
-				T_Bytes dictChecksumBytes = toBytes(toBigEndian(dictChecksum));
-				if (fwrite(dictChecksumBytes.data(), 1u, dictChecksumBytes.size(), dataFile) != dictChecksumBytes.size())
-				{
-					goto error;
-				}
-			}
-
-			// write compressed dictionary
-			if (fwrite(dictBytesCompressedData, 1u, static_cast<size_t>(dictBytesCompressedSize), dataFile) != static_cast<size_t>(dictBytesCompressedSize))
-			{
-				goto error;
-			}
-
-			// write compressed data from the temporary data file
-			FILE* cDataFile;
-#if defined(_WIN32)
-			if (fopen_s(&cDataFile, tmpDataFilename.c_str(), "rb") != 0)
-#else
-			if ((cDataFile = fopen(tmpDataFilename.c_str(), "rb")) == nullptr)
-#endif
-			{
-				goto error;
-			}
-
-			if (cDataFile)
-			{
-				Bytef* buffer = new Bytef[16348];
-				size_t numRead = 0;
-				size_t totalDataRead = 0;
-#if defined(_WIN32)
-				while ((numRead = fread_s(buffer, 16348u, 1, 16348u, cDataFile)) > 0)
-#else
-				while ((numRead = fread(buffer, 1, 16348u, cDataFile)) > 0)
-#endif
-				{
-					totalDataRead += numRead;
-					if (fwrite(buffer, 1u, numRead, dataFile) != numRead)
-					{
-						delete[] buffer;
-						fclose(cDataFile);
-						goto error;
-					}
-				}
-
-				delete[] buffer;
-				fclose(cDataFile);
-
-				if (totalDataRead != dataSize)
-				{
-					// something isn't right here
-					goto error;
-				}
-			}
-
-			// end endpoint
-			if (endEndpoint && fwrite(endEndpoint->data(), 1u, endEndpoint->size(), dataFile) != endEndpoint->size())
-			{
-				goto error;
-			}
-			
-			// all done, close the file handle
-			fclose(dataFile);
+			datafileStream.write(reinterpret_cast<const char*>(dictSizeBytes.data()), dictSizeBytes.size());
+		}
+		{
+			T_Bytes dictChecksumBytes = toBytes(toBigEndian(dictChecksum));
+			datafileStream.write(reinterpret_cast<const char*>(dictChecksumBytes.data()), dictChecksumBytes.size());
 		}
 
-		goto success;
+		// all done
+		datafileStream.close();
 
-	error:
-		// abort packing
-		delete[] dictBytesCompressedData;
-		fclose(dataFile);
-		std::remove(tmpDataFilename.c_str());
-		std::remove(outputFilename.c_str());
-		throw std::runtime_error("Something went wrong while writing to file: " + outputFilename);
-
-	success:
 		// cleanup
 		delete[] dictBytesCompressedData;
-		std::remove(tmpDataFilename.c_str());
 
 		// writing successful, print out some statistics
-
 		size_t totalDataSize = fileSize(outputFilename.c_str());
 		const float compressionRatio = (1.f - totalDataSize * 1.f / totalRead) * 100.f;
 		char compressionRatioStr[16];

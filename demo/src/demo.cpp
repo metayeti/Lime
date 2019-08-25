@@ -82,7 +82,7 @@ void Demo::ExtractData()
 	// the dictionary will be extracted. Every subsequent call to ex.get()
 	// will use the dictionary that was extracted on the first get.
 
-	// LoadResource is a simple wrapper function to make extraction of
+	// LoadResource is a simple helper function to make extraction of
 	// SFML and std::string objects easier.
 
 	// Fetch some strings from meta category.

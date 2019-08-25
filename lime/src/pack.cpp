@@ -34,7 +34,6 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include <utility>
 #include <iterator>
 #include <sys/stat.h>
 #include <fstream>
@@ -362,7 +361,7 @@ namespace Lime
 			T_Bytes dictPlaceholderBytes = toBytes<uint32_t>(0u);
 			// dict size placeholder
 			datafileStream.write(reinterpret_cast<const char*>(dictPlaceholderBytes.data()), dictPlaceholderBytes.size());
-			// dict checksum placeholders
+			// dict checksum placeholder
 			datafileStream.write(reinterpret_cast<const char*>(dictPlaceholderBytes.data()), dictPlaceholderBytes.size());
 		}
 

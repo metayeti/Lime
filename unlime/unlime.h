@@ -94,7 +94,6 @@ private:
 	uint32_t dictSize = 0;
 	uint32_t dictChecksum = 0;
 	uint64_t dictOffset = 0;
-	//uint64_t dataOffset = 0;
 
 	bool wasValidated = false;
 
@@ -329,7 +328,6 @@ private:
 
 		// calculate offsets
 		dictOffset = totalDatafileSize - dictSize - LM_ENDPOINT_LENGTH;
-		//dataOffset = static_cast<uint64_t>(dictSize) + static_cast<uint64_t>(dictOffset);
 
 		// validation complete
 		wasValidated = true;
@@ -344,7 +342,6 @@ private:
 
 		dictMap.clear();
 
-		//datafileStream.seekg(-(static_cast<int>(dictSize + LM_ENDPOINT_LENGTH)), datafileStream.end);
 		datafileStream.seekg(dictOffset, datafileStream.beg);
 
 		T_Bytes dictBytes;

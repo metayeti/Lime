@@ -1,12 +1,12 @@
-# LimePack
+# Lime
 
 ![Lime](/lime.png?raw=true)
 
-(0.9.5, __not__ battle tested)
+(0.9.5, __not__ production ready - do not use as the format is likely to go through many revisions)
 
 ## Info
 
-LimePack is a set of tools for data and asset packing intended for C++ game development. It depends on [zlib](https://zlib.net/) for compression. The Lime datafile [format](format.txt) allows random access.
+Lime is a set of tools for data and asset packing intended for C++ game development. It depends on [zlib](https://zlib.net/) for compression. The Lime datafile [format](format.txt) allows random access.
 
 To create Lime datafiles, build the *Lime* utility in [`/lime/`](/lime/). You can find the build instructions in the build.txt file.
 

@@ -2,7 +2,7 @@
 
 ![Lime](/lime.png?raw=true)
 
-(0.9.5, __not__ production ready - do not use as the format is likely to go through many revisions)
+(0.9.5, __not__ production ready)
 
 ## Info
 

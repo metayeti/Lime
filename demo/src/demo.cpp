@@ -69,7 +69,8 @@ void Demo::PrepareDemo()
 
 void Demo::ExtractData()
 {
-	// To extract data, first we create an Extractor object.
+	// To extract data, we create an Extractor using the unlime object for our context.
+
 	// This opens the datafile.
 	Unlime::Extractor ex(*unlime);
 
@@ -80,14 +81,16 @@ void Demo::ExtractData()
 
 	// On the very first call to ex.get(), datafile will be verified and
 	// the dictionary will be extracted. Every subsequent call to ex.get()
-	// will use the dictionary that was extracted on the first get.
+	// will use the dictionary that was extracted on the first get, even if
+	// we create a new Extractor later in the future.
 
-	// LoadResource is a simple helper function to make extraction of
-	// SFML and std::string objects easier.
+	// LoadResource and LoadString are helper functions to make extraction of
+	// SFML and std::string objects from the datafile easier. These functions
+	// call ex.get() with the provided resource category and key.
 
 	// Fetch some strings from meta category.
-	LoadResource(metaName, ex, "meta", "name");
-	LoadResource(metaVersion, ex, "meta", "version");
+	LoadString(metaName, ex, "meta", "name");
+	LoadString(metaVersion, ex, "meta", "version");
 
 	// Here we fetch our font.
 	// We need font data to remain in memory the whole time the application remains open
@@ -113,37 +116,61 @@ void Demo::ExtractData()
 		music.openFromMemory(musicData.data(), musicData.size());
 	}
 
-	// The datafile is closed when ex goes out of scope.
+	// The datafile is closed when ex goes out of scope. In the odd case we have multiple
+	// extractor objects, the datafile is closed when last extractor goes out of scope.
 }
 
 void Demo::Init()
 {
-	// Create the unlime object on our demo datafile filename.
-	// The datafile is not open yet, we are only setting up the object and
-	// associating it with the filename.
-	unlime = std::make_unique<Unlime>(datafileFilename);
-
-	// Before we start extracting, we may want to set some options.
+	// Before we create the Unlime object, we may want to set some options.
 	// This is an optional step, it is only required if you wish to perform datafile
 	// identification via the head string or if you wish to skip integrity checking.
+	Unlime::Options options;
 
 	// integrityCheck performs the checksum test when reading data. An exception will
-	// be thrown in case data corruption is detected.
-	// Set false to skip (skips automatically for datafiles packed with -chksum=none
-	// even when set to true).
+	// be thrown in case data corruption is detected. When set to true, the dictionary's
+	// and each individual resource's checksum will be tested.
+	// Set false to skip (skips automatically for datafiles packed with -chksum=none).
+	// (The only reason to skip this would be to provide a very marginal speed increase
+	// at the cost of reliability.)
 	// Default is true.
-	unlime->options.integrityCheck = true;
+	options.integrityCheck = true;
 
 	// checkHeadString makes unlime throw an exception if options.headString does not match
-	// the head string defined in the datafile.
+	// the head string defined in the datafile. This is useful if you want to make sure you
+	// are dealing with the correct datafile.
 	// Default is false.
-	unlime->options.checkHeadString = true;
+	options.checkHeadString = true;
 
 	// headString sets the string to be compared against when checkHeadString is set to true.
-	// This only comes into effect on the very first get() call, when the datafile format is
-	// being verified and the dictionary is extracted.
+	// This only comes into effect on the very first Extractor::get() call, when the datafile
+	// format is being verified and the dictionary is extracted.
 	// Default is an empty string.
-	unlime->options.headString = "Lime Demo";
+	options.headString = "Lime Demo";
+
+	// Create the Unlime object and associate it with the demo datafile filename.
+	// The datafile is not open yet at this point, we are only setting up the object and
+	// associating it with the filename.
+	// The second parameter is optional (when omitted, default options will be used).
+	unlime = std::make_unique<Unlime>(datafileFilename, options);
+
+	// Alternatively, we can create the Unlime object by associating it with the resource
+	// manifest instead. Unlime is smart enough to determine on its own whether it is reading
+	// a datafile or a resource manifest. In the latter case, the manifest will be read and
+	// data will be read directly from the files (or meta values) defined in the manifest.
+	// Using this essentially skips the datafile part and is highly recommended during
+	// development to avoid packing your data over and over again between changes. The idea
+	// is that the Unlime API stays the same in your code whether dealing with actual datafiles
+	// or resource manifests directly. When deploying, simply pack the datafile and use the
+	// above method to read from the datafile instead - both methods should work seamlessly
+	// with the rest of your code and resources. Options are ignored when using this method.
+
+	//
+	// (NOT IMPLEMENTED YET)
+	//
+
+	// Commented out on purpose.
+	//unlime = std::make_unique<Unlime>(resourceManifestFilename);
 
 	// We can now proceed to extract data from the datafile.
 	ExtractData();

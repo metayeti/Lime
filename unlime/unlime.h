@@ -47,6 +47,13 @@ class Unlime
 public:
 	using T_Bytes = std::vector<Bytef>;
 
+	struct Options
+	{
+		bool integrityCheck = true;
+		bool checkHeadString = false;
+		std::string headString;
+	};
+
 private:
 	const std::string LIME_VERSION = "0.9.5";
 
@@ -74,6 +81,8 @@ private:
 	const uint64_t minimumDatafileSize = 36u;
 
 	const std::string datafileFilename;
+
+	Options options;
 
 	struct T_DictItem
 	{
@@ -384,28 +393,21 @@ private:
 		}
 	}
 
-	Unlime(Unlime const&);
-	Unlime& operator=(Unlime const&);
-	Unlime(Unlime&& other);
-	const Unlime& operator=(Unlime&& other);
+	Unlime(Unlime const&) = delete;
+	Unlime& operator=(Unlime const&) = delete;
+	Unlime(Unlime&& other) = delete;
+	const Unlime& operator=(Unlime&& other) = delete;
 
 public:
-	struct Options
-	{
-		bool integrityCheck = true;
-		bool checkHeadString = true;
-		std::string headString;
-	} options;
-
 	class Extractor
 	{
 	private:
 		Unlime* unlime = nullptr;
 
-		Extractor(Extractor const&);
-		Extractor& operator=(Extractor const&);
-		Extractor(Extractor&& other);
-		const Extractor& operator=(Extractor&& other);
+		Extractor(Extractor const&) = delete;
+		Extractor& operator=(Extractor const&) = delete;
+		Extractor(Extractor&& other) = delete;
+		const Extractor& operator=(Extractor&& other) = delete;
 
 	public:
 		Extractor(Unlime& context)
@@ -453,8 +455,13 @@ public:
 		}
 	};
 
-	Unlime(std::string const& filename)
+	Unlime(std::string filename)
 	: datafileFilename(filename)
+	{
+	}
+
+	Unlime(std::string filename, Options options)
+	: datafileFilename(filename), options(options)
 	{
 	}
 

@@ -39,7 +39,7 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include <stdexcept>
+#include <exception>
 #include <fstream>
 #include <cstdint>
 #include <zlib.h>
@@ -47,6 +47,73 @@
 class Unlime
 {
 public:
+
+	struct Exception
+	{
+		struct UnableToOpen : public std::exception
+		{
+			const std::string filename;
+
+			UnableToOpen(std::string filename)
+			: filename(filename)
+			{
+			}
+
+			const char* what() const throw()
+			{
+				return ("Unable to open file: " + filename).c_str();
+			}
+		};
+
+		struct UnknownFormat : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unknown file format!";
+			}
+		};
+
+		struct CorruptedFile : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Corrupted datafile!";
+			}
+		};
+
+		struct VersionMismatch : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Datafile version mismatch!";
+			}
+		};
+
+		struct UnknownDatafile : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unknown datafile!";
+			}
+		};
+
+		struct Decompress : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unable to decompress data!";
+			}
+		};
+
+		struct Unknown : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unknown error!";
+			}
+		};
+	};
+
 	using T_Bytes = std::vector<Bytef>;
 
 	struct Options
@@ -67,13 +134,6 @@ private:
 	const std::string LM_END_NOCHKSUM = "(LM";
 
 	const int LM_ENDPOINT_LENGTH = 3;
-
-	const std::string ERROR_UNKNOWN_ERROR = "Unknown error!";
-	const std::string ERROR_UNKNOWN_FORMAT = "Unknown file format!";
-	const std::string ERROR_VERSION_MISMATCH = "Datafile version mismatch!";
-	const std::string ERROR_UNKNOWN_DATAFILE = "Unknown datafile!";
-	const std::string ERROR_CORRUPTED_FILE = "Corrupted datafile format.";
-	const std::string ERROR_DECOMPRESS = "Unable to decompress data.";
 
 	enum class DatafileChecksumFunc : unsigned char
 	{
@@ -121,7 +181,7 @@ private:
 		datafileStream.open(datafileFilename, std::ios::in | std::ifstream::binary);
 		if (!datafileStream.is_open())
 		{
-			throw std::runtime_error("Unable to open file: " + datafileFilename);
+			throw Exception::UnableToOpen(datafileFilename);
 		}
 	}
 
@@ -178,7 +238,7 @@ private:
 	{
 		if (size == 0)
 		{
-			throw std::runtime_error(ERROR_DECOMPRESS);
+			throw Exception::Decompress();
 		}
 
 		static const size_t inBuffSize = 500u;
@@ -192,7 +252,7 @@ private:
 		dcmpStream.next_in = Z_NULL;
 		if (inflateInit(&dcmpStream) != Z_OK)
 		{
-			throw std::runtime_error(ERROR_DECOMPRESS);
+			throw Exception::Decompress();
 		}
 
 		T_Bytes inputBuffer;
@@ -219,7 +279,7 @@ private:
 				if (streamState != Z_OK && streamState != Z_STREAM_END)
 				{
 					delete[] outputBuffer;
-					throw std::runtime_error(ERROR_DECOMPRESS);
+					throw Exception::Decompress();
 				}
 
 				destination.insert(destination.end(), outputBuffer, outputBuffer + (outBuffSize - dcmpStream.avail_out));
@@ -232,7 +292,7 @@ private:
 
 		if (inflateEnd(&dcmpStream) != Z_OK)
 		{
-			throw std::runtime_error(ERROR_DECOMPRESS);
+			throw Exception::Decompress();
 		}
 		
 		if (options.integrityCheck)
@@ -249,7 +309,7 @@ private:
 			}
 			if (checksum != knownChecksum)
 			{
-				throw std::runtime_error(ERROR_CORRUPTED_FILE);
+				throw Exception::CorruptedFile();
 			}
 		}
 	}
@@ -258,7 +318,7 @@ private:
 	{
 		if (!datafileStream.is_open())
 		{
-			throw std::runtime_error(ERROR_UNKNOWN_ERROR);
+			throw Exception::Unknown();
 		}
 
 		// filesize sanity check
@@ -266,7 +326,7 @@ private:
 		totalDatafileSize = datafileStream.tellg();
 		if (totalDatafileSize < minimumDatafileSize)
 		{
-			throw std::runtime_error(ERROR_UNKNOWN_FORMAT);
+			throw Exception::UnknownFormat();
 		}
 
 		// retreive bgn and end endpoints
@@ -293,7 +353,7 @@ private:
 		}
 		else
 		{
-			throw std::runtime_error(ERROR_UNKNOWN_FORMAT);
+			throw Exception::UnknownFormat();
 		}
 
 		// retreive version string
@@ -309,7 +369,7 @@ private:
 			// for now we assume that any version other than current version is unreadable
 			// future versions may allow backwards compatibility through datafile versioning
 			// in case the format changes
-			throw std::runtime_error(ERROR_VERSION_MISMATCH);
+			throw Exception::VersionMismatch();
 		}
 
 		uint8_t headStrLength = 0;
@@ -322,7 +382,7 @@ private:
 
 			if (headStr != options.headString)
 			{
-				throw std::runtime_error(ERROR_UNKNOWN_DATAFILE);
+				throw Exception::UnknownDatafile();
 			}
 		}
 		else if (headStrLength > 0)
@@ -348,7 +408,7 @@ private:
 	{
 		if (!datafileStream.is_open() || !wasValidated)
 		{
-			throw std::runtime_error(ERROR_UNKNOWN_ERROR);
+			throw Exception::Unknown();
 		}
 
 		dictMap.clear();

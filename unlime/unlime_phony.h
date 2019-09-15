@@ -72,7 +72,7 @@ private:
 	const std::string ERROR_DECOMPRESS = "Unable to decompress data.";
 	*/
 
-	const std::string datafileFilename;
+	const std::string resourceManifestFilename;
 
 	size_t n_extractors = 0;
 
@@ -127,12 +127,12 @@ public:
 	};
 
 	Unlime(std::string filename)
-		: datafileFilename(filename)
+		: resourceManifestFilename(filename)
 	{
 	}
 
 	Unlime(std::string filename, Options options)
-		: datafileFilename(filename)
+		: resourceManifestFilename(filename)
 	{
 	}
 

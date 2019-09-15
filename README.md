@@ -2,7 +2,7 @@
 
 ![Lime](/lime.png?raw=true)
 
-(0.9.5, __not__ production ready)
+(0.9.6, __not__ production ready, proof of concept stage)
 
 ## Info
 
@@ -18,7 +18,7 @@ To build the demo, read the build instructions in [`/demo/`](/demo/).
 
 Ideally, Lime is used for small datafiles but large datafiles (2GB and beyond) are supported. Packing enormous (individual) resource files is not recommended as Unlime expands each queried resource fully into memory (streaming is not supported). Packing lots of small resources is fine but packing may take a while when using compression. If dealing with large datafiles, it is recommended to turn off compression until deployment.
 
-## Thanks
+## Credits
 
 - [zlib](https://zlib.net/) - used for compression
 - [SFML](https://www.sfml-dev.org/) - used for the demo project

@@ -47,7 +47,6 @@
 class Unlime
 {
 public:
-
 	struct Exception
 	{
 		struct UnableToOpen : public std::exception
@@ -124,7 +123,7 @@ public:
 	};
 
 private:
-	const std::string LIME_VERSION = "0.9.5";
+	const std::string LIME_VERSION = "0.9.6";
 
 	const std::string LM_BGN_ADLER32 = "LM>";
 	const std::string LM_END_ADLER32 = "<LM";
@@ -453,6 +452,9 @@ private:
 				dictMap[categoryKey][dataKey] = dictItem;
 			}
 		}
+
+		// finished reading dict
+		dictWasRead = true;
 	}
 
 	Unlime(Unlime const&) = delete;

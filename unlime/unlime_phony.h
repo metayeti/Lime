@@ -41,9 +41,10 @@
 
 #include <string>
 #include <vector>
-/*
 #include <unordered_map>
+#include <fstream>
 #include <algorithm>
+/*
 #include <stdexcept>
 #include <fstream>
 #include <cstdint>
@@ -53,6 +54,72 @@
 class Unlime
 {
 public:
+	struct Exception
+	{
+		struct UnableToOpen : public std::exception
+		{
+			const std::string filename;
+
+			UnableToOpen(std::string filename)
+			: filename(filename)
+			{
+			}
+
+			const char* what() const throw()
+			{
+				return ("Unable to open file: " + filename).c_str();
+			}
+		};
+
+		struct UnknownFormat : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unknown file format!";
+			}
+		};
+
+		struct CorruptedFile : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Corrupted datafile!";
+			}
+		};
+
+		struct VersionMismatch : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Datafile version mismatch!";
+			}
+		};
+
+		struct UnknownDatafile : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unknown datafile!";
+			}
+		};
+
+		struct Decompress : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unable to decompress data!";
+			}
+		};
+
+		struct Unknown : public std::exception
+		{
+			const char* what() const throw()
+			{
+				return "Unknown error!";
+			}
+		};
+	};
+
 	using T_Bytes = std::vector<Bytef>;
 
 	struct Options
@@ -63,27 +130,79 @@ public:
 	};
 
 private:
-	/*
-	const std::string ERROR_UNKNOWN_ERROR = "Unknown error!";
-	const std::string ERROR_UNKNOWN_FORMAT = "Unknown file format!";
-	const std::string ERROR_VERSION_MISMATCH = "Datafile version mismatch!";
-	const std::string ERROR_UNKNOWN_DATAFILE = "Unknown datafile!";
-	const std::string ERROR_CORRUPTED_FILE = "Corrupted datafile format.";
-	const std::string ERROR_DECOMPRESS = "Unable to decompress data.";
-	*/
+
+	class INIParse
+	{
+		const std::string whitespaceDelimiters = " \t\n\r\f\v";
+
+		enum class PDataType : char
+		{
+			PDATA_NONE,
+			PDATA_COMMENT,
+			PDATA_SECTION,
+			PDATA_KEYVALUE,
+			PDATA_UNKNOWN
+		};
+
+		struct PData
+		{
+			PDataType type;
+			std::string key;
+			std::string value;
+		};
+
+		static void trim(std::string& str);
+
+		static PData parseLine(std::string line);
+	};
 
 	const std::string resourceManifestFilename;
 
-	size_t n_extractors = 0;
-
-	void openDatafile()
+	struct T_DictCategory
 	{
+		std::unordered_map<std::string, std::string> map;
+		bool isMeta = false;
+	};
+	using T_DictMap = std::unordered_map<std::string, T_DictCategory>;
 
-	}
+	T_DictMap dictMap;
+	bool dictWasRead = false;
 
-	void closeDatafile()
+	void readDict()
 	{
+		std::ifstream resourceManifestStream(resourceManifestFilename);
+		if (!resourceManifestStream.is_open())
+		{
+			throw Exception::UnableToOpen(resourceManifestFilename);
+		}
 
+		std::string resourceManifestContents;
+		resourceManifestStream.seekg(0, resourceManifestStream.end);
+		size_t fileSize = resourceManifestStream.tellg();
+		resourceManifestStream.seekg(0, resourceManifestStream.beg);
+		resourceManifestStream.read(&resourceManifestContents[0], fileSize);
+		resourceManifestStream.close();
+
+		std::vector<std::string> lineData;
+		{
+			std::string buff;
+			buff.reserve(50);
+			for (std::size_t i = 0; i < fileSize; i++)
+			{
+				char const& c = resourceManifestContents[i];
+				if (c == '\n')
+				{
+					lineData.push_back(buff);
+					buff.clear();
+					continue;
+				}
+				if (c != '\0' && c != '\r')
+				{
+					buff += c;
+				}
+			}
+			lineData.push_back(buff);
+		}
 	}
 
 	Unlime(Unlime const&) = delete;
@@ -106,22 +225,18 @@ public:
 		Extractor(Unlime& context)
 			: unlime(&context)
 		{
-			if (unlime->n_extractors++ == 0)
-			{
-				unlime->openDatafile();
-			}
 		}
 
 		~Extractor()
 		{
-			if (--unlime->n_extractors == 0)
-			{
-				unlime->closeDatafile();
-			}
 		}
 
 		bool get(T_Bytes& data, std::string const& category, std::string const& key) const
 		{
+			if (!unlime->dictWasRead)
+			{
+				unlime->readDict();
+			}
 			return true;
 		}
 	};
@@ -138,9 +253,8 @@ public:
 
 	void dropDict()
 	{
-		/*
 		dictMap.clear();
-		*/
+		dictWasRead = false;
 	}
 };
 

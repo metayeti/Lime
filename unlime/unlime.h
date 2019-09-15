@@ -33,6 +33,8 @@
 #ifndef LIME_UNLIME_H_
 #define LIME_UNLIME_H_
 
+#undef LIME_PHONY
+
 #include <string>
 #include <vector>
 #include <unordered_map>

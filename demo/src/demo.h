@@ -38,18 +38,45 @@
 #include <string>
 #include <stdexcept>
 #include <memory>
+
+// Include the unlime header.
 #include "unlime.h"
+
+// Alternatively, we can include the unlime_phony header insted.
+// unlime_phony replicates the API of unlime but it operates on resource manifests and
+// associated resource files instead of datafiles. Using this essentially skips the datafile
+// part and is highly recommended during development to avoid packing your data over and over
+// again between changes. The idea is that the Unlime API stays the same in your code whether
+// working with datafiles or directly with resource manifests. When deploying, simply use the
+// real unlime header instead and pack your datafile. Both headers should work seamlessly, you
+// only need to associate it with the correct datafile filename or the resource manifest
+// filename. To aid with this, unlime_phony defines UNLIME_PHONY which the precompiler can check
+// against (see below). Unlime constructor options are ignored when using unlime_phony.
+
+// Commented out on purpose.
+//#include "unlime_phony.h"
 
 class Demo
 {
 private:
+#if defined(UNLIME_PHONY)
+	// resource manifest filename (used when unlime_phony.h is included)
+	#if defined(_WIN32)
+		const std::string datafileFilename = "../../../datafile/resources.manifest";
+	#else
+		const std::string datafileFilename = "../datafile/resources.manifest";
+	#endif
+#else
+	// datafile filename (used when unlime.h is included)
+	#if defined(_WIN32)
+		const std::string datafileFilename = "../../../datafile/demo.dat";
+	#else
+		const std::string datafileFilename = "../datafile/demo.dat";
+	#endif
+#endif
+
 	const unsigned int window_width = 640;
 	const unsigned int window_height = 480;
-#if defined(_WIN32)
-	const std::string datafileFilename = "../../../datafile/demo.dat";
-#else
-	const std::string datafileFilename = "../datafile/demo.dat";
-#endif
 
 	// pointer to SFML window
 	std::unique_ptr<sf::RenderWindow> window;
@@ -76,7 +103,6 @@ private:
 	// string data from "meta" section in the datafile
 	std::string metaName;
 	std::string metaVersion;
-	std::string metaImportantInfo;
 
 	// on-screen objects
 	sf::Sprite sprBackground;

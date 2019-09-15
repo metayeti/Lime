@@ -152,25 +152,9 @@ void Demo::Init()
 	// The datafile is not open yet at this point, we are only setting up the object and
 	// associating it with the filename.
 	// The second parameter is optional (when omitted, default options will be used).
+	// If using unlime_phony, we are associating the object with the resource manifest
+	// filename instead and options are ignored.
 	unlime = std::make_unique<Unlime>(datafileFilename, options);
-
-	// Alternatively, we can create the Unlime object by associating it with the resource
-	// manifest instead. Unlime is smart enough to determine on its own whether it is reading
-	// a datafile or a resource manifest. In the latter case, the manifest will be read and
-	// data will be read directly from the files (or meta values) defined in the manifest.
-	// Using this essentially skips the datafile part and is highly recommended during
-	// development to avoid packing your data over and over again between changes. The idea
-	// is that the Unlime API stays the same in your code whether dealing with actual datafiles
-	// or resource manifests directly. When deploying, simply pack the datafile and use the
-	// above method to read from the datafile instead - both methods should work seamlessly
-	// with the rest of your code and resources. Options are ignored when using this method.
-
-	//
-	// (NOT IMPLEMENTED YET)
-	//
-
-	// Commented out on purpose.
-	//unlime = std::make_unique<Unlime>(resourceManifestFilename);
 
 	// We can now proceed to extract data from the datafile.
 	ExtractData();

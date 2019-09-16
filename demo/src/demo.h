@@ -42,7 +42,7 @@
 // Include the unlime header.
 #include "unlime.h"
 
-// Alternatively, we can include the unlime_phony header insted.
+// Alternatively, we can include the unlime_phony header instead.
 // unlime_phony replicates the API of unlime but it operates on resource manifests and
 // associated resource files instead of datafiles. Using this essentially skips the datafile
 // part and is highly recommended during development to avoid packing your data over and over

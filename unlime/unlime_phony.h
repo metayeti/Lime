@@ -37,18 +37,13 @@
 #ifndef LIME_UNLIME_PHONY_H_
 #define LIME_UNLIME_PHONY_H_
 
-#define LIME_PHONY
+#define UNLIME_PHONY
 
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <fstream>
 #include <algorithm>
-/*
-#include <stdexcept>
-#include <fstream>
-#include <cstdint>
-*/
 #include <zlib.h>
 
 class Unlime
@@ -73,50 +68,26 @@ public:
 
 		struct UnknownFormat : public std::exception
 		{
-			const char* what() const throw()
-			{
-				return "Unknown file format!";
-			}
 		};
 
 		struct CorruptedFile : public std::exception
 		{
-			const char* what() const throw()
-			{
-				return "Corrupted datafile!";
-			}
 		};
 
 		struct VersionMismatch : public std::exception
 		{
-			const char* what() const throw()
-			{
-				return "Datafile version mismatch!";
-			}
 		};
 
 		struct UnknownDatafile : public std::exception
 		{
-			const char* what() const throw()
-			{
-				return "Unknown datafile!";
-			}
 		};
 
 		struct Decompress : public std::exception
 		{
-			const char* what() const throw()
-			{
-				return "Unable to decompress data!";
-			}
 		};
 
 		struct Unknown : public std::exception
 		{
-			const char* what() const throw()
-			{
-				return "Unknown error!";
-			}
 		};
 	};
 
@@ -131,10 +102,8 @@ public:
 
 private:
 
-	class INIParse
+	struct INIParse
 	{
-		const std::string whitespaceDelimiters = " \t\n\r\f\v";
-
 		enum class PDataType : char
 		{
 			PDATA_NONE,
@@ -151,9 +120,52 @@ private:
 			std::string value;
 		};
 
-		static void trim(std::string& str);
+		static void trim(std::string& str)
+		{
+			static const std::string whitespaceDelimiters = " \t\n\r\f\v";
+			str.erase(str.find_last_not_of(whitespaceDelimiters) + 1);
+			str.erase(0, str.find_first_not_of(whitespaceDelimiters));
+		}
 
-		static PData parseLine(std::string line);
+		static PData parseLine(std::string line)
+		{
+			trim(line);
+			if (line.empty())
+			{
+				return { PDataType::PDATA_NONE };
+			}
+			const char firstCharacter = line.at(0);
+			if (firstCharacter == ';')
+			{
+				return { PDataType::PDATA_COMMENT };
+			}
+			if (firstCharacter == '[')
+			{
+				const size_t commentAt = line.find_first_of(';');
+				if (commentAt != std::string::npos)
+				{
+					line = line.substr(0, commentAt);
+				}
+				const size_t closingBracketAt = line.find_last_of(']');
+				if (closingBracketAt != std::string::npos)
+				{
+					std::string section = line.substr(1, closingBracketAt - 1);
+					trim(section);
+					return { PDataType::PDATA_SECTION, section };
+				}
+			}
+			const size_t equalsAt = line.find_first_of('=');
+			if (equalsAt != std::string::npos)
+			{
+				std::string key = line.substr(0, equalsAt);
+				trim(key);
+				std::string value = line.substr(equalsAt + 1);
+				trim(value);
+				return { PDataType::PDATA_KEYVALUE, key, value };
+			}
+
+			return { PDataType::PDATA_UNKNOWN };
+		}
 	};
 
 	const std::string resourceManifestFilename;
@@ -168,9 +180,11 @@ private:
 	T_DictMap dictMap;
 	bool dictWasRead = false;
 
+	std::string resourceDirectory;
+
 	void readDict()
 	{
-		std::ifstream resourceManifestStream(resourceManifestFilename);
+		std::ifstream resourceManifestStream(resourceManifestFilename, std::ios::in | std::ifstream::binary);
 		if (!resourceManifestStream.is_open())
 		{
 			throw Exception::UnableToOpen(resourceManifestFilename);
@@ -180,6 +194,7 @@ private:
 		resourceManifestStream.seekg(0, resourceManifestStream.end);
 		size_t fileSize = resourceManifestStream.tellg();
 		resourceManifestStream.seekg(0, resourceManifestStream.beg);
+		resourceManifestContents.resize(fileSize);
 		resourceManifestStream.read(&resourceManifestContents[0], fileSize);
 		resourceManifestStream.close();
 
@@ -203,6 +218,62 @@ private:
 			}
 			lineData.push_back(buff);
 		}
+
+		bool inSection = false;
+		bool sectionIsMeta = false;
+		T_DictCategory* currentDictCategory = nullptr;
+		std::string category;
+		for (auto const& line : lineData)
+		{
+			auto [ptype, key, value] = INIParse::parseLine(line);
+			if (ptype == INIParse::PDataType::PDATA_SECTION)
+			{
+				inSection = true;
+				category = key;
+				sectionIsMeta = category[0] == '@';
+				if (sectionIsMeta)
+				{
+					category = category.substr(1);
+				}
+				currentDictCategory = &dictMap[category];
+				currentDictCategory->isMeta = sectionIsMeta;
+			}
+			else if (inSection && ptype == INIParse::PDataType::PDATA_KEYVALUE)
+			{
+				// normalize filename path separators to apply to current system
+				// assumes windows uses \ and everything else uses /
+				if (category.size() && !currentDictCategory->isMeta) // skip meta categories
+				{
+#if defined(_WIN32)
+					std::replace(value.begin(), value.end(), '/', '\\');
+#else
+					std::replace(value.begin(), value.end(), '\\', '/');
+#endif
+				}
+				currentDictCategory->map[key] = value;
+			}
+		}
+
+		const size_t lastSlashInPath = resourceManifestFilename.find_last_of("\\/");
+		if (lastSlashInPath == std::string::npos)
+		{
+			resourceDirectory = "";
+		}
+		else
+		{
+			resourceDirectory = resourceManifestFilename.substr(0, lastSlashInPath);
+
+#if defined(_WIN32)
+			std::replace(resourceDirectory.begin(), resourceDirectory.end(), '/', '\\');
+			resourceDirectory += '\\';
+#else
+			std::replace(resourceDirectory.begin(), resourceDirectory.end(), '\\', '/');
+			resourceDirectory += '/';
+#endif
+		}
+
+		// done reading dict
+		dictWasRead = true;
 	}
 
 	Unlime(Unlime const&) = delete;
@@ -223,7 +294,7 @@ public:
 
 	public:
 		Extractor(Unlime& context)
-			: unlime(&context)
+		: unlime(&context)
 		{
 		}
 
@@ -237,17 +308,70 @@ public:
 			{
 				unlime->readDict();
 			}
+			auto it = unlime->dictMap.find(category);
+			if (it == unlime->dictMap.end())
+			{
+				return false;
+			}
+			auto& collection = it->second;
+			auto it2 = collection.map.find(key);
+			if (it2 == collection.map.end())
+			{
+				return false;
+			}
+			std::string& value = it2->second;
+			if (collection.isMeta)
+			{
+				data.assign(value.begin(), value.end());
+			}
+			else
+			{
+				std::string const resourceFilename = unlime->resourceDirectory + value;
+				std::ifstream resourceStream(resourceFilename, std::ios::in | std::ifstream::binary);
+				if (!resourceStream.is_open())
+				{
+					throw Exception::UnableToOpen(resourceFilename);
+				}
+
+				static const size_t inBuffSize = 512u;
+				Bytef* inputBuffer = new Bytef[inBuffSize];
+
+				resourceStream.seekg(0, resourceStream.end);
+				size_t resourceSize = resourceStream.tellg();
+				resourceStream.seekg(0, resourceStream.beg);
+
+				data.clear();
+				data.reserve(resourceSize);
+
+				bool isEof = false;
+				size_t numRead = 0;
+
+				do {
+
+					resourceStream.read(reinterpret_cast<char*>(inputBuffer), inBuffSize);
+					numRead = resourceStream.gcount();
+
+					std::string blah(reinterpret_cast<const char*>(inputBuffer), inBuffSize);
+
+					data.insert(data.end(), inputBuffer, inputBuffer + numRead);
+
+				} while (!resourceStream.eof());
+
+				delete[] inputBuffer;
+
+				resourceStream.close();
+			}
 			return true;
 		}
 	};
 
 	Unlime(std::string filename)
-		: resourceManifestFilename(filename)
+	: resourceManifestFilename(filename)
 	{
 	}
 
 	Unlime(std::string filename, Options options)
-		: resourceManifestFilename(filename)
+	: resourceManifestFilename(filename)
 	{
 	}
 
@@ -255,6 +379,7 @@ public:
 	{
 		dictMap.clear();
 		dictWasRead = false;
+		resourceDirectory = "";
 	}
 };
 

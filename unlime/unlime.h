@@ -33,7 +33,7 @@
 #ifndef LIME_UNLIME_H_
 #define LIME_UNLIME_H_
 
-#undef LIME_PHONY
+#undef UNLIME_PHONY
 
 #include <string>
 #include <vector>
@@ -453,7 +453,7 @@ private:
 			}
 		}
 
-		// finished reading dict
+		// done reading dict
 		dictWasRead = true;
 	}
 

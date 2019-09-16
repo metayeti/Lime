@@ -53,6 +53,11 @@
 // filename. To aid with this, unlime_phony defines UNLIME_PHONY which the precompiler can check
 // against (see below). Unlime constructor options are ignored when using unlime_phony.
 
+// In case you are dealing with multiple datafiles, you can't combine phony and real unlime
+// usage without considerable trouble. It is recommended you simply open all datafiles in phony
+// mode while your project is being developed. This shouldn't be a problem as long as you setup
+// your code correctly (see this demo for an example that you can build upon).
+
 // Commented out on purpose.
 //#include "unlime_phony.h"
 
@@ -137,7 +142,7 @@ private:
 		Unlime::T_Bytes data;
 		if (ex.get(data, resCategory, resKey))
 		{
-			strObject = std::string(reinterpret_cast<char*>(data.data()), data.size());
+			strObject.assign(reinterpret_cast<const char*>(data.data()), data.size());
 		}
 	}
 

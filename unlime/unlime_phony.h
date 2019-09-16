@@ -66,29 +66,12 @@ public:
 			}
 		};
 
-		struct UnknownFormat : public std::exception
-		{
-		};
-
-		struct CorruptedFile : public std::exception
-		{
-		};
-
-		struct VersionMismatch : public std::exception
-		{
-		};
-
-		struct UnknownDatafile : public std::exception
-		{
-		};
-
-		struct Decompress : public std::exception
-		{
-		};
-
-		struct Unknown : public std::exception
-		{
-		};
+		struct UnknownFormat : public std::exception { };
+		struct CorruptedFile : public std::exception { };
+		struct VersionMismatch : public std::exception { };
+		struct UnknownDatafile : public std::exception { };
+		struct Decompress : public std::exception { };
+		struct Unknown : public std::exception { };
 	};
 
 	using T_Bytes = std::vector<Bytef>;
@@ -240,8 +223,6 @@ private:
 			}
 			else if (inSection && ptype == INIParse::PDataType::PDATA_KEYVALUE)
 			{
-				// normalize filename path separators to apply to current system
-				// assumes windows uses \ and everything else uses /
 				if (category.size() && !currentDictCategory->isMeta) // skip meta categories
 				{
 #if defined(_WIN32)
@@ -350,8 +331,6 @@ public:
 
 					resourceStream.read(reinterpret_cast<char*>(inputBuffer), inBuffSize);
 					numRead = resourceStream.gcount();
-
-					std::string blah(reinterpret_cast<const char*>(inputBuffer), inBuffSize);
 
 					data.insert(data.end(), inputBuffer, inputBuffer + numRead);
 

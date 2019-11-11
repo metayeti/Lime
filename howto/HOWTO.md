@@ -61,7 +61,6 @@ There are a number of options to use with Lime, use `lime --help` to get more in
 Now we can extract the data in our game's code using the Unlime API. The following example uses SFML to create and manage a game window:
 
 ```C++
-#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 
 #include "unlime.h"
@@ -122,13 +121,12 @@ int main()
 		sf::Event event;
 		while (window.pollEvent(event))
 		{
-			// Close window: exit
 			if (event.type == sf::Event::Closed)
 				window.close();
 		}
 		// Clear screen
 		window.clear(sf::Color(0xf6, 0xf6, 0xf1, 0xff));
-		// Draw the sprites
+		// Draw sprites
 		window.draw(sprHouse);
 		window.draw(sprStairs);
 		// Update the window

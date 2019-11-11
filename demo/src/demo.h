@@ -113,7 +113,6 @@ private:
 	sf::Sprite sprBackground;
 	sf::Sprite sprFlag;
 	sf::Sprite sprCloud;
-
 	sf::Text txtTitle;
 
 	// animation variables

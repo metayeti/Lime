@@ -184,8 +184,8 @@ int main(int argc, char* argv[])
 					<< "   header   user resources   dictionary   end\n"
 					<< " |________|________________|____________|_____|\n\n\n"
 					<< "   Header:\n\n"
-					<< "   bgn   version*  head*  dict size   dict checksum\n"
-					<< " |_____|_________|______|___________|...............|\n\n\n"
+					<< "   bgn   revision-  head*  dict size   dict checksum\n"
+					<< " |_____|__________|______|___________|...............|\n\n\n"
 					<< "   Dictionary:\n\n"
 					<< "   N   category 1   ...   category N\n"
 					<< " |___|____________|     |____________|\n"
@@ -202,11 +202,11 @@ int main(int argc, char* argv[])
 					<< "                            data key*  seek_id+  size+  checksum\n"
 					<< "                          |__________|_________|______|..........|\n\n\n"
 					<< "All non-resource strings* are stored in the following manner:\n\n"
-					<< "   length   string\n"
+					<< "   length-  string\n"
 					<< " |________|________|\n\n"
-					<< "String lengths are stored as 8-bit unsigned integers.\n"
 					<< "Numeric values are stored as 32-bit unsigned integers.\n"
-					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n";
+					<< "Numeric values marked + are stored as 64-bit unsigned integers.\n"
+					<< "Numeric values marked - are stored as 8-bit unsigned integers.\n";
 			}
 			else if (helpTopic == "manifest") {
 				inf

@@ -36,19 +36,24 @@
 #define LIME_CONST_H_
 
 #include <string>
+#include <cstdint>
 
 namespace Lime
 {
-	const std::string LIME_VERSION = "0.9.6";
+	const std::string LIME_VERSION = "1.0.0";
 	const std::string LIME_COPYRIGHT_YEAR = "2019";
 	const std::string LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
 
-	const std::string LM_BGN_ADLER32 = "LM>";
-	const std::string LM_END_ADLER32 = "<LM";
-	const std::string LM_BGN_CRC32 = "LM]";
-	const std::string LM_END_CRC32 = "[LM";
-	const std::string LM_BGN_NOCHKSUM = "LM)";
-	const std::string LM_END_NOCHKSUM = "(LM";
+	// format revision number
+	const uint8_t LIME_REVISION = 1;
+
+	// bgn/end endpoints
+	const std::string LM_BGN_ADLER32 = "L>";
+	const std::string LM_END_ADLER32 = "<M";
+	const std::string LM_BGN_CRC32 = "L]";
+	const std::string LM_END_CRC32 = "[M";
+	const std::string LM_BGN_NOCHKSUM = "L)";
+	const std::string LM_END_NOCHKSUM = "(M";
 }
 
 #endif // LIME_CONST_H_

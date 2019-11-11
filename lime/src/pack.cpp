@@ -227,7 +227,6 @@ namespace Lime
 
 		Lime datafile structure:
 
-
 		           Z1    ...   Zn    Zdict
 		          [~~~] [~~~] [~~~] [~~~~~~~~~~]       (zipped content)
 
@@ -237,8 +236,8 @@ namespace Lime
 
 		   Header:
 
-		   bgn   version*  head*  dict size   dict checksum
-		 |_____|_________|______|___________|...............|
+		   bgn   revision-  head*  dict size   dict checksum
+		 |_____|__________|______|___________|...............|
 
 
 		   Dictionary:
@@ -263,12 +262,12 @@ namespace Lime
 
 		All non-resource strings* are stored in the following manner:
 
-		   length   string
+		   length-  string
 		 |________|________|
 
-		String lengths are stored as 8-bit unsigned integers.
 		Numeric values are stored as 32-bit unsigned integers.
 		Numeric values marked + are stored as 64-bit unsigned integers.
+		Numeric values marked - are stored as 8-bit unsigned integers.
 
 		*/
 
@@ -305,7 +304,7 @@ namespace Lime
 		}
 
 		// prepare header data
-		const std::string* limeVersion = &LIME_VERSION;
+		const uint8_t limeRevision = LIME_REVISION;
 		const std::string* headString = &options.headstr;
 
 		size_t dictPlaceholderOffset = 0u;
@@ -332,15 +331,12 @@ namespace Lime
 			datafileStream.write(bgnEndpoint->data(), bgnEndpoint->size());
 		}
 
-		// version length
+		// lime revision
 		{
-			uint8_t versionLength = static_cast<uint8_t>(limeVersion->size());
-			T_Bytes versionLengthBytes = toBytes(toBigEndian(versionLength));
-			datafileStream.write(reinterpret_cast<const char*>(versionLengthBytes.data()), versionLengthBytes.size());
+			T_Bytes limeRevisionBytes = toBytes(toBigEndian(limeRevision));
+			datafileStream.write(reinterpret_cast<const char*>(limeRevisionBytes.data()), limeRevisionBytes.size());
 		}
 
-		// version string
-		datafileStream.write(reinterpret_cast<const char*>(limeVersion->data()), limeVersion->size());
 
 		// head length
 		{

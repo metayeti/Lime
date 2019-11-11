@@ -69,6 +69,7 @@ void Demo::PrepareDemo()
 
 void Demo::ExtractData()
 {
+	// (This function is called by the Init function below)
 	// To extract data, we create an Extractor using the unlime object for our context.
 
 	// This opens the datafile.
@@ -167,8 +168,8 @@ void Demo::Init()
 	// In the vast majority of use cases, the memory footprint of the dict will be negligible.
 
 	// If this function is called, the dictionary and all data related to the datafile is dropped.
-	// If an Extractor is created and get() is called, the datafile will be verified again and the
-	// the dictionary will be read (again).
+	// If Extractor::get() is called, the datafile will be verified again and the the dictionary
+	// will be read (again).
 
 	// Commented out on purpose.
 	//unlime->dropDict();

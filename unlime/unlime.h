@@ -123,16 +123,16 @@ public:
 	};
 
 private:
-	const std::string LIME_VERSION = "0.9.6";
+	const uint8_t LIME_REVISION = 1;
 
-	const std::string LM_BGN_ADLER32 = "LM>";
-	const std::string LM_END_ADLER32 = "<LM";
-	const std::string LM_BGN_CRC32 = "LM]";
-	const std::string LM_END_CRC32 = "[LM";
-	const std::string LM_BGN_NOCHKSUM = "LM)";
-	const std::string LM_END_NOCHKSUM = "(LM";
+	const std::string LM_BGN_ADLER32 = "L>";
+	const std::string LM_END_ADLER32 = "<M";
+	const std::string LM_BGN_CRC32 = "L]";
+	const std::string LM_END_CRC32 = "[M";
+	const std::string LM_BGN_NOCHKSUM = "L)";
+	const std::string LM_END_NOCHKSUM = "(M";
 
-	const int LM_ENDPOINT_LENGTH = 3;
+	const int LM_ENDPOINT_LENGTH = 2;
 
 	enum class DatafileChecksumFunc : unsigned char
 	{
@@ -355,19 +355,15 @@ private:
 			throw Exception::UnknownFormat();
 		}
 
-		// retreive version string
+		// retreive revision number
 		datafileStream.seekg(LM_ENDPOINT_LENGTH);
-		uint8_t versionStrLength = 0;
-		readValueFromStream(versionStrLength);
+		uint8_t limeRevision = 0;
+		readValueFromStream(limeRevision);
 
-		std::string versionStr;
-		readBytesFromStream(versionStr, versionStrLength);
-
-		if (versionStr != LIME_VERSION)
+		if (limeRevision != LIME_REVISION)
 		{
-			// for now we assume that any version other than current version is unreadable
-			// future versions may allow backwards compatibility through datafile versioning
-			// in case the format changes
+			// for now we assume that any version other than current version is unreadable;
+			// future versions may allow backwards format compatibility
 			throw Exception::VersionMismatch();
 		}
 

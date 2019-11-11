@@ -9,6 +9,7 @@ Lime datafile structure:
 
    Header:
 
+         (format)
    bgn   revision-  head*  dict size   dict checksum
  |_____|__________|______|___________|...............|
 

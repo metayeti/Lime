@@ -51,11 +51,10 @@ public:
 	{
 		struct UnableToOpen : public std::exception
 		{
-			const std::string filename;
 			const std::string whatStr;
 
 			UnableToOpen(std::string filename)
-			: filename(filename), whatStr("Unable to open file: " + filename)
+			: whatStr("Unable to open file: " + filename)
 			{
 			}
 

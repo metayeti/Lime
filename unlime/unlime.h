@@ -52,15 +52,16 @@ public:
 		struct UnableToOpen : public std::exception
 		{
 			const std::string filename;
+			const std::string whatStr;
 
 			UnableToOpen(std::string filename)
-			: filename(filename)
+			: filename(filename), whatStr("Unable to open file: " + filename)
 			{
 			}
 
 			const char* what() const throw()
 			{
-				return ("Unable to open file: " + filename).c_str();
+				return whatStr.c_str();
 			}
 		};
 

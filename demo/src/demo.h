@@ -141,7 +141,7 @@ private:
 		Unlime::T_Bytes data;
 		if (ex.get(data, resCategory, resKey))
 		{
-			strObject.assign(reinterpret_cast<const char*>(data.data()), data.size());
+			strObject.assign(data.begin(), data.end());
 		}
 	}
 

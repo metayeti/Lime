@@ -101,7 +101,7 @@ int main()
 		// Fetch and set the window title
 		Unlime::T_Bytes bytesTitle;
 		if (ex.get(bytesTitle, "window", "title")) {
-			std::string strTitle = std::string(reinterpret_cast<const char*>(bytesTitle.data()), bytesTitle.size());
+			std::string strTitle(bytesTitle.begin(), bytesTitle.end());
 			window.setTitle(strTitle);
 		}
 		

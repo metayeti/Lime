@@ -2,6 +2,8 @@
 
 ![Lime](/lime.png?raw=true)
 
+v1.0.1
+
 ## Info
 
 Lime is a set of tools for data and asset packing intended for C++ game development. It depends on [zlib](https://zlib.net/) for compression. The Lime datafile [format](format.txt) allows random access.
@@ -28,6 +30,6 @@ You are advised to use *unlime_phony.h* during development (reads data directly 
 
 ## License
 
-Copyright (c) 2019 Danijel Durakovic
+Copyright (c) 2023 Danijel Durakovic
 
 Licensed under the terms of the [MIT license](LICENSE)

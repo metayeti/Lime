@@ -40,8 +40,8 @@
 
 namespace Lime
 {
-	const std::string LIME_VERSION = "1.0.0";
-	const std::string LIME_COPYRIGHT_YEAR = "2019";
+	const std::string LIME_VERSION = "1.0.1";
+	const std::string LIME_COPYRIGHT_YEAR = "2023";
 	const std::string LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
 
 	// format revision number

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Danijel Durakovic
+ * Copyright (c) 2024 Danijel Durakovic
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -31,9 +31,9 @@
 #include "demo.h"
 #include <exception>
 #if defined(_WIN32)
-#include <Windows.h>
+	#include <Windows.h>
 #else
-#include <iostream>
+	#include <iostream>
 #endif
 
 #if defined(_WIN32)

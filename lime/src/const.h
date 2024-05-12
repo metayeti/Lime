@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Danijel Durakovic
+ * Copyright (c) 2024 Danijel Durakovic
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -40,8 +40,8 @@
 
 namespace Lime
 {
-	const std::string LIME_VERSION = "1.0.1";
-	const std::string LIME_COPYRIGHT_YEAR = "2023";
+	const std::string LIME_VERSION = "1.1.0";
+	const std::string LIME_COPYRIGHT_YEAR = "2024";
 	const std::string LIME_COPYRIGHT_AUTHOR = "Danijel Durakovic";
 
 	// format revision number

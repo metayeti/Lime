@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Danijel Durakovic
+ * Copyright (c) 2024 Danijel Durakovic
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -549,7 +549,7 @@ namespace Lime
 		// create the dictionary binary
 		T_Bytes dictBytes;
 
-		uint32_t N_categories = static_cast<uint32_t>(dict.size());
+		uint32_t N_categories = static_cast<uint32_t>(dictDataMap.size());
 		appendBytes(dictBytes, toBytes(toBigEndian(N_categories)));
 
 		for (auto const& it : dictDataMap)

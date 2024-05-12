@@ -2,11 +2,11 @@
 
 ![Lime](/lime.png?raw=true)
 
-v1.0.1
+v1.1.0 dev
 
 ## Info
 
-Lime is a set of tools for data and asset packing intended for C++ game development. It depends on [zlib](https://zlib.net/) for compression. The Lime datafile [format](format.txt) allows random access.
+Lime is a set of tools for data and asset packing intended for C++ game development. It depends on [zlib](https://zlib.net/) for compression. The Lime datafile [format](format.txt) allows for fast random access.
 
 To create Lime datafiles, build the *Lime* utility in [`/lime/`](/lime/). You can find the build instructions in the build.txt file.
 

@@ -10,7 +10,7 @@ To build the Demo project:
 
 ## Windows:
 
-  Navigate to \windows\vs16 and use Visual Studio 16 to open the solution file.
+  Navigate to \project\vs17\ and use Visual Studio to open the solution file.
   Select the configuration you want to use (for example Release / x64) and build
   the Demo project.
 

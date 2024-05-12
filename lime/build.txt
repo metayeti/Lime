@@ -10,7 +10,7 @@ To build the Lime utility:
 
 ## Windows:
 
-  Navigate to \windows\vs17 and use Visual Studio to open the solution file.
+  Navigate to \project\vs17\ and use Visual Studio to open the solution file.
   Select the configuration you want to use (for example Release / x64) and build
   the Lime project.
 
